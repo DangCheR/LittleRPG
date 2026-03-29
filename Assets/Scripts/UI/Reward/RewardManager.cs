@@ -85,7 +85,7 @@ public class RewardManager : MonoBehaviour,IController
     }
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
 }
 public class InitRewardDataModelsCommand : AbstractCommand

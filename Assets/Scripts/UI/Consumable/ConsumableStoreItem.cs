@@ -49,7 +49,7 @@ public class ConsumableStoreItem : MonoBehaviour, IController, IPointerDownHandl
     }
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
     public void OnPointerDown(PointerEventData eventData)
     {

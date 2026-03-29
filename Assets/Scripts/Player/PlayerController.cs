@@ -35,7 +35,7 @@ public class PlayerController : MonoBehaviour, IController
     /// <summary>
     /// 是否要去砍敌人
     /// </summary>
-    bool IsAttackEnemy=false;
+    bool IsAttackEnemy = false;
     /// <summary>
     /// 玩家是否死亡
     /// </summary>
@@ -74,14 +74,14 @@ public class PlayerController : MonoBehaviour, IController
 
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
     void Awake()
     {
         this.RegisterEvent<PlayerDieEvent>(e =>
-      {
-          PlayerDieMethod();
-      });
+        {
+            PlayerDieMethod();
+        });
         this.RegisterEvent<EnemyDieEvent>(EnemyDieMethod);
         this.RegisterEvent<ReleaseDoubleAtkEvent>(ReleaseDoubleAtk);
     }
@@ -90,7 +90,7 @@ public class PlayerController : MonoBehaviour, IController
     {
         agent = this.GetComponent<NavMeshAgent>();
         animator = this.GetComponent<Animator>();
-        playerModel=this.GetModel<PlayerDataModel>();
+        playerModel = this.GetModel<PlayerDataModel>();
         moveModel = this.GetModel<MoveSpeedModel>();
         Npc = GameObject.Find("Npc");
         this.RegisterEvent<MoveSpeedEvent>(e =>
@@ -102,7 +102,7 @@ public class PlayerController : MonoBehaviour, IController
     private void Update()
     {
         MouseDownMove();
-        if (isMove&&!isDie)
+        if (isMove && !isDie)
         {
             //到达移动位置，停下
             if (!agent.pathPending && agent.remainingDistance < 0.5f)
@@ -159,7 +159,7 @@ public class PlayerController : MonoBehaviour, IController
         }
         if (isSkill)
         {
-          if(animator.GetCurrentAnimatorStateInfo(0).IsName("Skill") && (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1.0f))
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName("Skill") && (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1.0f))
             {
                 isSkill = false;
                 DoubleAttackAnimFinallyEvent();
@@ -171,7 +171,7 @@ public class PlayerController : MonoBehaviour, IController
     /// </summary>
     void MouseDownMove()
     {
-        if (!isSkill&&Input.GetMouseButtonDown(1) && !EventSystem.current.IsPointerOverGameObject() && !isDie)
+        if (!isSkill && Input.GetMouseButtonDown(1) && !EventSystem.current.IsPointerOverGameObject() && !isDie)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
@@ -232,7 +232,7 @@ public class PlayerController : MonoBehaviour, IController
     /// <param name="e"></param>
     void EnemyDieMethod(EnemyDieEvent e)
     {
-        if (e.gameObject== raycastHit.transform.gameObject)
+        if (e.gameObject == raycastHit.transform.gameObject)
         {
             isMove = false;
             IsAttackEnemy = false;
@@ -260,7 +260,7 @@ public class PlayerController : MonoBehaviour, IController
     /// </summary>
     void ReleaseDoubleAtk(ReleaseDoubleAtkEvent e)
     {
-        isMove=false;
+        isMove = false;
         isSkill = true;
         animator.SetBool(FieldManager.IsSkill, true);
     }
@@ -292,19 +292,19 @@ public class PlayerController : MonoBehaviour, IController
             Vector3 norVec = transform.rotation * Vector3.forward;
             Vector3 temVec = EnemyDataManager.instance.enemyList[i].transform.position - transform.position;
             float jiajiao = Mathf.Acos(Vector3.Dot(norVec.normalized, temVec.normalized)) * Mathf.Rad2Deg;//计算两个向量间的夹角
-            if (distance < attackScope*1.2f)
+            if (distance < attackScope * 1.2f)
             {
-                if (jiajiao <= attackAngle )
+                if (jiajiao <= attackAngle)
                 {
                     EnemyDataManager.instance.enemyList[i].transform.
-                        GetComponent<IEnemy>().GetAttackMethod(playerModel.attack+(playerModel.level*3)+ playerModel.itemAttack);
+                        GetComponent<IEnemy>().GetAttackMethod(playerModel.attack + (playerModel.level * 3) + playerModel.itemAttack);
                 }
             }
         }
     }
-   /// <summary>
-   /// 动画播放最后帧
-   /// </summary>
+    /// <summary>
+    /// 动画播放最后帧
+    /// </summary>
     public void DoubleAttackAnimFinallyEvent()
     {
         animator.SetBool(FieldManager.IsSkill, false);
@@ -321,14 +321,14 @@ public class MoveSpeedCommand : AbstractCommand
     /// 持续时间
     /// </summary>
     float time;
-    public MoveSpeedCommand(float speedPercent,float time)
+    public MoveSpeedCommand(float speedPercent, float time)
     {
         this.speedPercent = speedPercent;
         this.time = time;
     }
     protected override void OnExecute()
     {
-        this.GetModel<MoveSpeedModel>().QuickMoveSpeed(speedPercent,time);
+        this.GetModel<MoveSpeedModel>().QuickMoveSpeed(speedPercent, time);
     }
 }
 public class ReleaseDoubleAtkCommand : AbstractCommand
@@ -357,7 +357,7 @@ public class MoveSpeedModel : AbstractModel
     /// </summary>
     /// <param name="speedPercent"></param>
     /// <param name="time"></param>
-    public void QuickMoveSpeed(float speedPercent,float time)
+    public void QuickMoveSpeed(float speedPercent, float time)
     {
         if (MoveSpeed == startMoveSpeed)
         {
@@ -369,7 +369,7 @@ public class MoveSpeedModel : AbstractModel
             this.GetUtility<CoroutineUtility>().Stopcoroutine(currentCoroutine);
             currentCoroutine = this.GetUtility<CoroutineUtility>().StartCoroutine(CountDownSpeedPercent(time));
         }
-        this.SendEvent(new  MoveSpeedEvent());
+        this.SendEvent(new MoveSpeedEvent());
     }
     /// <summary>
     /// 恢复移速
@@ -377,7 +377,7 @@ public class MoveSpeedModel : AbstractModel
     public void RecoverMoveSpeed()
     {
         MoveSpeed = startMoveSpeed;
-        this.SendEvent(new  MoveSpeedEvent());
+        this.SendEvent(new MoveSpeedEvent());
     }
 
     public void ReleaseDoubleAtk()
@@ -390,7 +390,7 @@ public class MoveSpeedModel : AbstractModel
         MoveSpeed = startMoveSpeed;
         RecoverMoveSpeed();
     }
-   
+
 }
 /// <summary>
 /// 设置移速事件

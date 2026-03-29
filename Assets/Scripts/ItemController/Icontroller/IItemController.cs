@@ -136,7 +136,7 @@ public abstract class IItemController : ItemController, IController, IPointerDow
     }
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
 
 }

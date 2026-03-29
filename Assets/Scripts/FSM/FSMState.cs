@@ -117,7 +117,7 @@ public abstract class FSMState:IController
 
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
 }
 

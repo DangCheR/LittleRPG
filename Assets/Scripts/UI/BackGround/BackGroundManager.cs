@@ -213,7 +213,7 @@ public class BackGroundManager : MonoBehaviour, IController
     }
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
 }
 /// <summary>

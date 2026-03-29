@@ -91,7 +91,7 @@ public class StoreItemBuyController : MonoBehaviour, IController, IPointerEnterH
     }
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
 
 }

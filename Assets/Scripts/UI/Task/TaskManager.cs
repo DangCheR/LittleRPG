@@ -72,7 +72,7 @@ public class TaskManager : MonoBehaviour, IController
     }
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
     void OnApplicationQuit()
     {

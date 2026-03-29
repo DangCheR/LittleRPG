@@ -106,6 +106,6 @@ public class NearEnemyController : IEnemy,IController
     }
     public IArchitecture GetArchitecture()
     {
-        return GameFramework.Interface;
+        return LittleRPGArchitecture.Interface;
     }
 }
