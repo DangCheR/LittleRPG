@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using UnityEngine.EventSystems; // 用于拖拽
+
 namespace LittleRPG
 {
     /// <summary>
@@ -9,6 +12,16 @@ namespace LittleRPG
     {
         public int ItemID; // 捡了什么
         public int ItemCount; // 捡了多少个
+    }
+
+    /// <summary>
+    /// 用于交易或合成等需要消耗物品的事件
+    /// </summary>
+    public struct InventoryConsumeItemListChangedEvent
+    {
+        List<SlotData> ConsumeList; // 消耗了什么和多少个
+        public int ItemID; // 消耗了什么
+        public int ItemCount; // 消耗了多少个
     }
 
     /// <summary>
@@ -27,27 +40,18 @@ namespace LittleRPG
         SlotData inventoryModelData;
     }
 
-
+    public struct EndDragEvent
+    {
+        public PointerEventData eventData;
+    }
 
     /// <summary>
     /// UI层面事件
     /// 直接操作背包UI拖动
     /// </summary>
-    public struct SlotChangeEvent
+    public struct SlotDropEvent
     {
-        public int FromIndex;
-        public int ToIndex;
-
-        // public InventoryData FromInventory;
-        // public InventoryData ToInventory;
-
-        public SlotChangeEvent(int fromIndex, int toIndex)
-        {
-            // FromInventory = fromInv;
-            FromIndex = fromIndex;
-            // ToInventory = toInv;
-            ToIndex = toIndex;
-        }
+        public PointerEventData eventData;
     }
 
     /// <summary>

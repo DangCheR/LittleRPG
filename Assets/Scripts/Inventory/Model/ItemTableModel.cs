@@ -8,9 +8,9 @@ using UnityEngine;
 /// </summary>
 namespace LittleRPG
 {
-    interface IItemModel : IModel
+    interface IItemTableModel : IModel
     {
-
+        public Dictionary<int, ItemInfo> ItemDic { get; }
     }
 
     public class ItemInfo
@@ -46,9 +46,9 @@ namespace LittleRPG
     }
 
     //所有装备的基础内容
-    public class ItemTableModel : AbstractModel, IItemModel
+    public class ItemTableModel : AbstractModel, IItemTableModel
     {
-        public Dictionary<int, ItemInfo> ItemDic = new();
+        public Dictionary<int, ItemInfo> ItemDic { get; } = new();
 
         protected override void OnInit()
         {
@@ -60,9 +60,9 @@ namespace LittleRPG
             Sprite AxeSprite = Resources.Load<Sprite>(AxeSpritePath);
             Sprite BootsSprite = Resources.Load<Sprite>(BootsSpritePath);
             Sprite BowSprite = Resources.Load<Sprite>(BowSpritePath);
-            ItemDic[0] = new ItemInfo(0,"大斧头", "帅的一皮", AxeSprite, 3);
-            ItemDic[1] = new ItemInfo(1,"大鞋子", "快的一皮", BootsSprite, 3);
-            ItemDic[2] = new ItemInfo(2,"大弓箭", "猛的一皮", BowSprite, 3);
+            ItemDic[0] = new ItemInfo(0, "大斧头", "帅的一皮", AxeSprite, 64);
+            ItemDic[1] = new ItemInfo(1, "大鞋子", "快的一皮", BootsSprite, 64);
+            ItemDic[2] = new ItemInfo(2, "大弓箭", "猛的一皮", BowSprite, 64);
 
         }
     }

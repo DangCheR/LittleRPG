@@ -13,18 +13,30 @@ namespace LittleRPG
     /// </summary>
     public class SlotUIView : MonoBehaviour,
         IPointerClickHandler,
+        IPointerEnterHandler,
+        IPointerExitHandler,
         IBeginDragHandler,
         IDragHandler,
         IEndDragHandler,
-        IDropHandler,
-        ICanSendEvent
+        IDropHandler
     {
         [Header("UI 绑定")]
         public Image IconImage;
         public TextMeshProUGUI CountText;
-        // public GameObject IconRoot; // 拖拽的本体
+        private CanvasGroup draggingCanvasGroup; //控制子物体的射线
+        public bool HasItem { get; set; } // 是否能拖动
+        public bool IsLock { get; set; } // 是否锁定
+        public int SlotIndex { get; set; } // 这个格子在背包中的index，由外部初始化时设置
+        RectTransform rect;
+        private RectTransform mDragLayer; // 拖拽时放在这里
+        private RectTransform Dragging;// 拖拽时移动的一堆东西的集合
 
-        public int SlotIndex { get; set; }
+        //事件
+        public event Action<int> OnSlotClickEvent; // 点击格子时发送事件，参数是格子index
+        public event Action<int, int> OnSlotDropEvent; // 被放下
+        public event Action<SlotUIView> OnDragFailedEvent; // 拖到无效区域
+        public event Action<RectTransform> OnSlotHoverEnterEvent; // 悬停进入
+        public event Action<RectTransform> OnSlotHoverExitEvent; // 悬停退出
 
         public void Init(int index)
         {
@@ -36,17 +48,17 @@ namespace LittleRPG
         /// </summary>
         private void InitComponent()
         {
-            IconImage = transform.Find("ItemIcon").GetComponent<Image>();
-            if (IconImage == null)
-            {
-                Debug.Log("槽位的IconImage不存在");
-            }
+            rect = GetComponent<RectTransform>();
+            // Dragging = rect.Find("Dragging");
+            Dragging = rect.Find("Dragging").GetComponent<RectTransform>();
+
+            IconImage = Dragging.Find("ItemIcon").GetComponent<Image>();
             // 获取子物体显示数量的组件
-            CountText = transform.Find("ItemCount").GetComponent<TextMeshProUGUI>();
-            if (CountText == null)
-            {
-                Debug.Log("槽位的IconImage不存在");
-            }
+            CountText = Dragging.Find("ItemCount").GetComponent<TextMeshProUGUI>();
+
+            draggingCanvasGroup = Dragging.GetComponent<CanvasGroup>();
+            draggingCanvasGroup.blocksRaycasts = true; // 默认不阻挡射线，只有在拖动时才阻挡
+            mDragLayer = GameObject.Find("MyCanvas").GetComponent<RectTransform>();
         }
 
         #region 提供方法由总controller调用来刷新画面
@@ -57,22 +69,21 @@ namespace LittleRPG
         /// <param name="icon"></param>
         public void UpdateIcon(Sprite icon = null)
         {
-            if (IconImage == null)
-            {
-                InitComponent();
-            }
-            Debug.Log("被操作了");
+            if (IconImage == null) InitComponent();
+
             if (icon == null)
             {
                 IconImage.enabled = false;
                 IconImage.color = new Color(0, 0, 0, 0);
                 CountText.text = "";
+                HasItem = false; // 如果设置了空图标一定不能拖动
             }
             else
             {
                 IconImage.enabled = true;
-                IconImage.color = new Color(255, 255, 255, 1);
+                IconImage.color = new Color(1, 1, 1, 1);
                 IconImage.sprite = icon;
+                HasItem = true; // 如果设置了图标一定能拖动
             }
         }
 
@@ -82,12 +93,14 @@ namespace LittleRPG
         /// <param name="count"></param>
         public void UpdateCount(int count = 0)
         {
-            if (CountText == null)
-            {
-                InitComponent();
-            }
+            if (CountText == null) InitComponent();
 
             if (count == 0)
+            {
+                CountText.text = "";
+                HasItem = false; // 如果设置了空图标一定不能拖动
+            }
+            else if (count == 1)
             {
                 CountText.text = "";
             }
@@ -102,28 +115,62 @@ namespace LittleRPG
         // --- 物理交互直接发送 Command
         public void OnPointerClick(PointerEventData eventData)
         {
-            // 比如：发送使用物品的指令
-            // this.SendCommand(new UseItemCommand(SlotIndex));
-            Debug.Log($"点击了格子：{SlotIndex}");
+            OnSlotClickEvent?.Invoke(SlotIndex);
         }
-
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            Debug.Log("开始拖拽");
-            /* 视觉效果：图标放大或变半透明 */
-        }
-        public void OnDrag(PointerEventData eventData)
-        {
-            Debug.Log("拖拽中");
-            /* 视觉效果：图标跟随鼠标 */
-        }
-        public void OnEndDrag(PointerEventData eventData)
-        {
-            Debug.Log("拖拽放下");
-            /* 视觉效果：图标归位 */
+            if (!HasItem)
+            {
+                Debug.Log("别拖了，没东西");
+                return;
+            }
+            draggingCanvasGroup.blocksRaycasts = false;
+
+            // 拖拽时设置父级为顶级
+            Dragging.SetParent(mDragLayer, true);
         }
 
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (!HasItem) return;
+            SlotUIView enter = eventData.pointerEnter != null
+    ? eventData.pointerEnter.GetComponent<SlotUIView>()
+    : null;
+
+            // 交给controller去处理飞回去的动画，或者丢地上的逻辑
+            if (enter != null && enter != this)
+            {
+                Debug.Log("已经在别人家上面了");
+                return;
+            }
+            Dragging.transform.position = eventData.position;
+        }
+
+        /// <summary>
+        /// 拖拽结束时,发送事件
+        /// </summary>
+        /// <param name="eventData"></param>
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            // 拖到UI外pointerEnter都是null，我操了
+            SlotUIView enter = eventData.pointerEnter != null
+                ? eventData.pointerEnter.GetComponent<SlotUIView>()
+                : null;
+
+            // 交给controller去处理飞回去的动画，或者丢地上的逻辑
+            if (enter == null || enter == this)
+            {
+                Debug.Log("拖到了无效区域，物品归位");
+                OnDragFailedEvent?.Invoke(this);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 被拖动物体放到当前槽位时,发送事件
+        /// </summary>
+        /// <param name="eventData"></param>
         public void OnDrop(PointerEventData eventData)
         {
             var sourceSlot = eventData.pointerDrag
@@ -131,16 +178,95 @@ namespace LittleRPG
 
             if (sourceSlot == null) return;
             if (sourceSlot == this) return;
-
-            this.SendEvent(new SlotChangeEvent(
-                // sourceSlot.BelongInventory,
-                sourceSlot.SlotIndex,
-                // this.BelongInventory,
-                this.SlotIndex
-            ));
+            OnSlotDropEvent?.Invoke(sourceSlot.SlotIndex, SlotIndex);
+            // this.SendCommand(new MoveItemCommand(sourceSlot.SlotIndex, SlotIndex));
         }
 
-        // 必须实现此接口，证明自己是 LittleRPG 架构体系内的人
-        public IArchitecture GetArchitecture() => LittleRPGArchitecture.Interface;
+        /// <summary>
+        /// 将拖拽的物品放到当前槽位
+        /// </summary>
+        public void DraggingToSlot()
+        {
+            Dragging.SetParent(transform);
+            Dragging.localPosition = Vector2.zero;
+
+            draggingCanvasGroup.blocksRaycasts = true;
+        }
+
+        /// <summary>
+        /// 播放飞回动画
+        /// 指定一个起始坐标，例如从另一个格子飞过来，或者从地面飞过来
+        /// </summary>
+        /// <param name="startWorldPos"></param>
+        /// <param name="tweenUtil"></param>
+        public void PlayFlyBackAnimation(ITweenUtility tweenUtil, Vector3 startWorldPos = default(Vector3))
+        {
+            if (Dragging == null) return;
+
+            // 为了让飞行的物体在最上层，短暂认一下干爹
+            Dragging.SetParent(mDragLayer);
+            Dragging.SetAsLastSibling();
+
+            // 1. 强行把肉身移动到指定的起始世界坐标（比如别人的老家）
+            if (startWorldPos != default(Vector3))
+            {
+                Dragging.position = startWorldPos;
+            }
+            if (tweenUtil == null)
+            {
+                Debug.Log("tweenUtil 竟然是空的，无法播放飞回动画");
+                return;
+            }
+            // 3. 此时它的 LocalPosition 是非常大的偏移，让它自己飞回 0,0
+            tweenUtil.UIFlyToTarget(Dragging, transform as RectTransform, 0.25f, () =>
+            {
+                if (Dragging == null)
+                {
+                    Debug.Log("飞回动画结束了，但拖拽物体已经没了，可能是被销毁了");
+                    return;
+                }
+                // 比如重新开启射线阻挡，或者把父级改回格子
+                Dragging.SetParent(transform as RectTransform);
+                draggingCanvasGroup.blocksRaycasts = true;
+            });
+        }
+
+        /// <summary>
+        /// 鼠标进入事件
+        /// 用于处理被挤开动画
+        /// </summary>
+        /// <param name="eventData"></param>
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (!HasItem) return;
+            // 1. 判断现在是不是有人正在拖拽东西？
+            var draggingObj = eventData.pointerDrag?.GetComponent<SlotUIView>();
+
+            // 2. 如果有人在拖东西，而且拖的不是我自己，且我这个格子不是空的
+            if (draggingObj != null && draggingObj != this)
+            {
+                // 打小报告：老大！有人拿着东西悬停在我头上了！快给我播个被挤开的动画！
+                // 把我自己的 Dragging (图标层) 传给老大去缩放
+                OnSlotHoverEnterEvent?.Invoke(this.Dragging);
+            }
+        }
+
+        /// <summary>
+        /// 鼠标从自己身上离开事件
+        /// 用于处理被挤开后复位动画
+        /// </summary>
+        /// <param name="eventData"></param>
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (!HasItem) return;
+
+            var draggingObj = eventData.pointerDrag?.GetComponent<SlotUIView>();
+
+            if (draggingObj != null && draggingObj != this)
+            {
+                // 打小报告：老大！那个人走了！快把我恢复原状！
+                OnSlotHoverExitEvent?.Invoke(this.Dragging);
+            }
+        }
     }
 }

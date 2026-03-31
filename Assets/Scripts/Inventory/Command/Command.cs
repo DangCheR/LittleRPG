@@ -26,18 +26,42 @@ namespace LittleRPG
     /// </summary>
     public class SwapItemCommand : InventoryCommand
     {
-        private int mFromIndex;
-        private int mToIndex;
+        private SlotUIView sourceSlot;
+        private SlotUIView targetSlot;
 
-        public SwapItemCommand(int fromIndex, int toIndex)
+        public SwapItemCommand(SlotUIView fromSlot, SlotUIView toSlot)
         {
-            mFromIndex = fromIndex;
-            mToIndex = toIndex;
+            sourceSlot = fromSlot;
+            targetSlot = toSlot;
         }
 
         protected override void OnInventoryExecute()
         {
+            if (sourceSlot == null || targetSlot == null)
+            {
+                // 可以发送全局 UI 弹窗事件，提示拖动无效
+                // this.SendEvent<UIMessageEvent>(new UIMessageEvent("无效的拖动！"));
+                return;
+            }
             // mInventorySystem.SwapItems(mFromIndex, mToIndex);
+        }
+    }
+
+    public class MoveItemCommand : AbstractCommand
+    {
+        private int mFromIndex;
+        private int mToIndex;
+
+        public MoveItemCommand(int from, int to)
+        {
+            mFromIndex = from;
+            mToIndex = to;
+        }
+
+        protected override void OnExecute()
+        {
+            // 把脏活累活交给 System 这个大管家
+            this.GetSystem<IInventorySystem>().MoveItem(mFromIndex, mToIndex);
         }
     }
 
@@ -68,14 +92,31 @@ namespace LittleRPG
             // }
         }
     }
+    public class UpdateModelCommand : InventoryCommand
+    {
+        private int SlotIndex;
+        private int ItemID;
+        private int ItemCount;
 
+        public UpdateModelCommand(int slotIndex, int itemID = -1, int itemCount = 0)
+        {
+            SlotIndex = slotIndex;
+            ItemID = itemID;
+            ItemCount = itemCount;
+        }
+
+        protected override void OnInventoryExecute()
+        {
+            // mInventorySystem.UpdateModel(SlotIndex, ItemID, ItemCount);
+        }
+    }
     public class AddInventoryCapacity : InventoryCommand
     {
         public int AddCapacity;
         protected override void OnInventoryExecute()
         {
             mInventoryModel.Capacity.Value += AddCapacity;
-            
+
         }
     }
 }

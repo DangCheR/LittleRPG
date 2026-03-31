@@ -8,6 +8,7 @@ namespace LittleRPG
         void AddItem(int itemID, int count);
         bool RemoveItem(int itemID, int count);
         int GetItemCount(int itemID);
+        void MoveItem(int mFromIndex, int mToIndex);
     }
 
     public class InventorySystem : AbstractSystem, IInventorySystem
@@ -18,23 +19,122 @@ namespace LittleRPG
         {
             // 初始化背包Model
             mInventoryModel = this.GetModel<IInventoryModel>();
+            // 监听事件
+            this.RegisterEvent<InventoryItemChangedEvent>(OnInventoryItemChangedEvent);
         }
 
-        //交换两个槽的物品
-        public void SwapItems(int from, int to)
+        /// <summary>
+        /// 从一个槽位移动到另一个槽位
+        /// </summary>
+        /// <param name="mFromIndex"></param>
+        /// <param name="mToIndex"></param>
+        public void MoveItem(int fromIndex, int toIndex)
         {
-            if (!mInventoryModel.PlayerItems.ContainsKey(to)) return;
-            if (mInventoryModel.PlayerItems[to].ItemCount == 0)
+            var model = this.GetModel<IInventoryModel>();
+            model.PlayerItems.TryGetValue(fromIndex, out var fromData);
+            model.PlayerItems.TryGetValue(toIndex, out var toData);
+            if (fromData == null || fromData.IsEmpty) return; // 容错：拖了一个空的东西
+
+            // 情况 1：目标是空的 -> 【直接移动】
+            if (toData == null || toData.IsEmpty)
             {
-                SlotData toData = mInventoryModel.PlayerItems[from];
-                mInventoryModel.PlayerItems[from] = mInventoryModel.PlayerItems[to];
-                mInventoryModel.PlayerItems[to] = toData;
+                var newData = SlotData.Empty.CopyFromOther(fromData);
+                if (!model.PlayerItems.ContainsKey(toIndex))
+                {
+                    model.PlayerItems.Add(toIndex, newData);
+                }
+                else
+                {
+                    model.PlayerItems[toIndex] = newData;
+                }
+
+                model.PlayerItems[fromIndex].SetNone();
             }
+            // 情况 2：目标有东西，且是同一种物品 -> 【尝试堆叠】
+            else if (fromData.ItemID == toData.ItemID)
+            {
+                // 去配置表查这个物品的最大堆叠数
+                int maxStack = this.GetModel<IItemTableModel>().ItemDic[fromData.ItemID].MaxStack;
+                int spaceLeft = maxStack - toData.ItemCount;
+
+                if (spaceLeft > 0)
+                {
+                    // 能塞多少塞多少
+                    int amountToMove = Mathf.Min(spaceLeft, fromData.ItemCount);
+
+                    // 修改目标数据
+                    toData.ItemCount += amountToMove;
+
+                    // 修改来源数据
+                    fromData.ItemCount -= amountToMove;
+                }
+                else
+                {
+                    // 目标虽然是同类，但是满了，那就变成【交换】
+                    SwapData(model, fromIndex, toIndex, fromData, toData);
+                }
+            }
+            // 情况 3：目标有东西，且是不同物品 -> 【直接交换】
             else
             {
-                mInventoryModel.PlayerItems[to] = mInventoryModel.PlayerItems[from];
-                mInventoryModel.PlayerItems[from] = new (0,0);
+                SwapData(model, fromIndex, toIndex, fromData, toData);
             }
+
+            // --- 终极奥义：修改完数据后，发送事件通知 UI 刷新！ ---
+            this.SendEvent(new InventorySlotChangedEvent { SlotIndex = fromIndex });
+            this.SendEvent(new InventorySlotChangedEvent { SlotIndex = toIndex });
+        }
+
+        /// <summary>
+        /// 辅助方法：交换数据
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="fromIdx"></param>
+        /// <param name="toIdx"></param>
+        /// <param name="fromData"></param>
+        /// <param name="toData"></param>
+        private void SwapData(IInventoryModel model,
+         int fromIdx,
+         int toIdx,
+         SlotData fromData,
+         SlotData toData)
+        {
+            fromData.ToSwapData(toData);
+        }
+
+        private void OnInventoryItemChangedEvent(InventoryItemChangedEvent e)
+        {
+            // InventoryItemChangedEvent itemChangedEvent = e;
+            // //找到已存在的同类物品或第一个空位，尝试堆叠
+            // int firstEmptySlot = GetFirstSlotIndex(itemChangedEvent.ItemID);
+
+            // if (firstEmptySlot < 0) return; // 无法添加
+
+            // while(itemChangedEvent.ItemCount > 0)
+            // {
+            //     int slotIndex = GetFirstSlotIndex(itemChangedEvent.ItemID);
+            //     if (slotIndex < 0) break; // 没有空位了，无法继续添加
+
+            //     AddItemToSlot(slotIndex, itemChangedEvent.ItemID, itemChangedEvent.ItemCount);
+
+            //     // 更新剩余数量
+            //     int currentCountInSlot = mInventoryModel.PlayerItems[slotIndex].ItemCount;
+            //     int maxStack = this.GetModel<IItemTableModel>().ItemDic[itemChangedEvent.ItemID].MaxStack;
+            //     int spaceLeft = maxStack - currentCountInSlot;
+
+            //     if (spaceLeft >= itemChangedEvent.ItemCount)
+            //     {
+            //         itemChangedEvent.ItemCount = 0; // 全部放进去了
+            //     }
+            //     else
+            //     {
+            //         itemChangedEvent.ItemCount -= spaceLeft; // 还有剩余，继续下一轮
+            //     }
+            // }
+
+            // this.SendEvent(new InventorySlotChangedEvent { SlotIndex = toIndex });
+
+            // Debug.Log($"InventorySystem 收到 InventoryItemChangedEvent：物品ID {e.ItemID} 数量 {e.ItemCount}");
         }
         /// <summary>
         /// 直接放入物体与指定数量
@@ -78,10 +178,40 @@ namespace LittleRPG
             return true;
         }
 
+        /// <summary>
+        /// 获取背包中的第一个指定物品的索引
+        /// 找不到返回第一个空位的索引，如果连空位都没有了就返回 -1
+        /// </summary>
+        /// <returns></returns>
+        public int GetFirstSlotIndex(int itemID)
+        {
+            int EmptySlotIndex = -1; // 默认-1表示没找到
+            int capacity = mInventoryModel.Capacity.Value;
+            var itemTableModel = this.GetModel<IItemTableModel>();
+
+            for (int i = 0; i < mInventoryModel.Capacity.Value; i++)
+            {
+                // 这个槽没东西
+                if (!mInventoryModel.PlayerItems.ContainsKey(i))
+                {
+                    if (EmptySlotIndex == -1) EmptySlotIndex = i; // 记录第一个空位的索引
+                    continue;
+                }
+                if (mInventoryModel.PlayerItems[i].ItemID == itemID
+                    && mInventoryModel.PlayerItems[i].ItemCount > 0
+                    && itemTableModel.ItemDic[itemID].MaxStack > mInventoryModel.PlayerItems[i].ItemCount)
+                {
+                    return i;
+                }
+
+            }
+            return EmptySlotIndex;
+        }
         public int GetItemCount(int itemID)
         {
             return 0;
             // return mInventoryModel.PlayerItems.TryGetValue(itemID, out int count) ? count : 0;
         }
+
     }
 }

@@ -68,7 +68,21 @@ public class LittleRPGArchitecture : Architecture<LittleRPGArchitecture>
         /// <param name="InventoryModel()"></param>
         /// <typeparam name="IInventoryModel"></typeparam>
         this.RegisterModel<IInventoryModel>(new InventoryModel()); // 注册玩家背包
-        this.RegisterModel<ItemTableModel>(new ItemTableModel()); // 注册对照表
+        this.RegisterModel<IItemTableModel>(new ItemTableModel()); // 注册对照表
         this.RegisterSystem<IInventorySystem>(new InventorySystem()); //注册system
+
+        /// <summary>
+        /// 注册经济系统
+        /// </summary>
+        /// <param name="EconomyModel()"></param>
+        /// <typeparam name="IEconomyModel"></typeparam>
+        this.RegisterModel<IEconomyModel>(new EconomyModel()); // 注册经济系统Model
+        this.RegisterSystem<IEconomySystem>(new EconomySystem()); // 注册经济系统System
+
+        /// <summary>
+        /// 注册tween工具
+        /// </summary>
+        /// <returns></returns>
+        RegisterUtility<ITweenUtility>(new DOTweenUtility());
     }
 }

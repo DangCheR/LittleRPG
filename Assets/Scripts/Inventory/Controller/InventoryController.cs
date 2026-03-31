@@ -17,12 +17,12 @@ namespace LittleRPG
         public Transform InventoryPanel; // 背包面板
         // 手下所有的傀儡格子
         private List<SlotUIView> mSlotViews = new List<SlotUIView>();
-
+        private ITweenUtility tweenUtility;
         // 玩家Model
         private IInventoryModel mModel;
 
         //对照表 提供Sprite与Name
-        private ItemTableModel itemTableModel;
+        private IItemTableModel itemTableModel;
 
         private void Start()
         {
@@ -36,6 +36,8 @@ namespace LittleRPG
             InventoryBtn = canvas.Find("InventoryBtn").GetComponent<Button>();
             ContentParent = InventoryPanel.Find("Context");
             CloseInventory = InventoryPanel.Find("CloseInventory").GetComponent<Button>();
+
+            tweenUtility = this.GetUtility<ITweenUtility>();
 
             //添加打开背包事件
             InventoryBtn.onClick.AddListener(() =>
@@ -51,28 +53,17 @@ namespace LittleRPG
 
             //加载槽位预制件
             SlotPrefab = Resources.Load<GameObject>("Prefabs/InventorySlot");
-            if (SlotPrefab == null)
-            {
-                Debug.Log("槽位的预制件加载失败");
-            }
-            mModel = this.GetModel<IInventoryModel>();
-            itemTableModel = this.GetModel<ItemTableModel>();
 
-            // 1. 初始化所有傀儡
+            mModel = this.GetModel<IInventoryModel>();
+            itemTableModel = this.GetModel<IItemTableModel>();
+
+            // 初始化所有Slot
             InitSlotViews();
 
-            // 2. 作为唯一大脑，监听底层数据变化
-            this.RegisterEvent<InventoryItemChangedEvent>(e =>
-            {
-                Debug.Log($"主角捡到了{e.ItemCount}个{e.ItemID}");
-            }).UnRegisterWhenGameObjectDestroyed(gameObject);
+            // 监听底层数据变化
+            this.RegisterEvent<EndDragEvent>(OnEndDragEvent).UnRegisterWhenGameObjectDestroyed(gameObject);
 
-
-            this.RegisterEvent<SlotChangeEvent>(e =>
-            {
-                Debug.Log("槽位事件");
-                // this.SendCommand<>
-            });
+            this.RegisterEvent<InventorySlotChangedEvent>(OnSlotDropEvent).UnRegisterWhenGameObjectDestroyed(gameObject);
 
             // 3. 首次展示
             RefreshAllViews();
@@ -83,7 +74,7 @@ namespace LittleRPG
         /// </summary>
         private void InitSlotViews()
         {
-            foreach(var kpv in mModel.PlayerItems)
+            foreach (var kpv in mModel.PlayerItems)
             {
                 Debug.Log($"{kpv.Key}:{kpv.Value}");
             }
@@ -95,6 +86,9 @@ namespace LittleRPG
                 var view = go.GetComponent<SlotUIView>();
 
                 view.Init(i); // 设置索引
+                view.OnSlotClickEvent += HandleSlotClick;
+                view.OnSlotDropEvent += HandleSlotDrop;
+                view.OnDragFailedEvent += HandleDragFailed;
 
                 //如果model中记录该槽存在数据
                 if (mModel.PlayerItems.ContainsKey(i))
@@ -111,7 +105,6 @@ namespace LittleRPG
                 //如果没有直接初始化为空
                 else
                 {
-                    Debug.Log($"{i}是无数据的");
                     view.UpdateIcon();
                     view.UpdateCount();
                 }
@@ -128,12 +121,56 @@ namespace LittleRPG
         }
 
         /// <summary>
+        /// 处理拖动结束事件
+        /// </summary>
+        /// <param name="e"></param>
+        private void OnEndDragEvent(EndDragEvent e)
+        {
+            e.eventData.pointerEnter.gameObject.TryGetComponent<SlotUIView>(out var targetSlot);
+            e.eventData.pointerDrag.gameObject.TryGetComponent<SlotUIView>(out var sourceSlot);
+            sourceSlot.DraggingToSlot();
+            if (targetSlot == null)
+            {
+                Debug.Log("拖到了无效区域，物品归位");
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 处理槽位被拖动事件，发送交换指令
+        /// </summary>
+        /// <param name="e"></param>
+        private void OnSlotDropEvent(InventorySlotChangedEvent e)
+        {
+            RefreshSlotView(e.SlotIndex);
+        }
+
+
+        /// <summary>
         /// 更改UI层面
         /// </summary>
         /// <param name="index"></param>
-        private void RefreshSlotView(SlotUIView slot)
+        private void RefreshSlotView(int slotIndex)
         {
+            var slot = mSlotViews[slotIndex];
 
+            mModel.PlayerItems.TryGetValue(slot.SlotIndex, out var slotData);
+
+            Debug.Log($"刷新了格子 {slotIndex}，数据是 {slotData.ItemID}:{slotData.ItemCount}");
+            if (slotData.IsEmpty)
+            {
+                slot.UpdateIcon();
+                slot.UpdateCount();
+            }
+            else
+            {
+                var itemInfo = GetItemInfo(slotData.ItemID);
+                if (itemInfo != null)
+                {
+                    slot.UpdateIcon(itemInfo.SpriteIcon);
+                    slot.UpdateCount(slotData.ItemCount);
+                }
+            }
         }
 
         // --- 处理傀儡上报的交互意图 ---
@@ -145,12 +182,23 @@ namespace LittleRPG
             // this.SendCommand(new UseItemCommand(slotIndex));
         }
 
+        /// <summary>
+        /// 监听小弟的拖放事件，发送交换物品的 Command
+        /// </summary>
+        /// <param name="sourceIndex"></param>
+        /// <param name="targetIndex"></param>
         private void HandleSlotDrop(int sourceIndex, int targetIndex)
         {
-            Debug.Log($"大脑收到：玩家把 {sourceIndex} 拖到了 {targetIndex}");
+            this.SendCommand(new MoveItemCommand(sourceIndex, targetIndex));
+        }
 
-            // 大脑直接向底层系统下发“交换”指令！
-            this.SendCommand(new SwapItemCommand(sourceIndex, targetIndex));
+        /// <summary>
+        /// 监听小弟的拖放失败事件，发送物品飞回去的 Command，或者丢地上的 Command
+        /// </summary>
+        /// <param name="draggedItem"></param>
+        private void HandleDragFailed(SlotUIView slot)
+        {
+            slot.PlayFlyBackAnimation(tweenUtility);
         }
 
         /// <summary>
