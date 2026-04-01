@@ -21,31 +21,31 @@ MonoBehaviour:
     m_Address: Assets/Resources_moved/Sprites/Items/axe.png
     m_ReadOnly: 0
     m_SerializedLabels:
-    - RomoteRes
+    - RemoteRes
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: aa4a26c0cbdd97947bcb882587085c3a
     m_Address: Assets/Resources_moved/Sprites/Items/bow.png
     m_ReadOnly: 0
     m_SerializedLabels:
-    - RomoteRes
+    - RemoteRes
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: bcde30dac2bdeae4c8ed4e7850dc6531
     m_Address: Assets/Resources_moved/Sprites/Items/gem.png
     m_ReadOnly: 0
     m_SerializedLabels:
-    - RomoteRes
+    - RemoteRes
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: de38f3a1eff4d3f498a7f8c27600535f
     m_Address: Assets/Resources_moved/Sprites/Items/Gold.png
     m_ReadOnly: 0
     m_SerializedLabels:
-    - RomoteRes
+    - RemoteRes
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f58acefbddc1e5e449b3e21a812779c4
     m_Address: Assets/Resources_moved/Sprites/Items/boots.png
     m_ReadOnly: 0
     m_SerializedLabels:
-    - RomoteRes
+    - RemoteRes
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 6a83c24dcd27eee468e7511f4e59d16d, type: 2}
