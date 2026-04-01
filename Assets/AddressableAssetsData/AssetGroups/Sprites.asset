@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Sprites
+  m_EditorClassIdentifier: 
+  m_GroupName: Sprites
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 0ec12c7f26e3d334fa76df3772617ac9
+  m_SerializeEntries:
+  - m_GUID: 7bfcbceb58e4be4408ae2f3168b14a21
+    m_Address: Assets/Resources_moved/Sprites/Items/bow.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 884ed111ae2bf1b499c79313c68142a0
+    m_Address: Assets/Resources_moved/Sprites/Items/axe.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bcde30dac2bdeae4c8ed4e7850dc6531
+    m_Address: Assets/Resources_moved/Sprites/Items/gem.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: de38f3a1eff4d3f498a7f8c27600535f
+    m_Address: Assets/Resources_moved/Sprites/Items/Gold.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f58acefbddc1e5e449b3e21a812779c4
+    m_Address: Assets/Resources_moved/Sprites/Items/boots.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 6a83c24dcd27eee468e7511f4e59d16d, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: ec1778faf013880438afbbf231cf906e, type: 2}
+    - {fileID: 11400000, guid: b5ebd4c2348ebba459cb94d9ca01fc53, type: 2}

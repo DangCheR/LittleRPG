@@ -38,17 +38,17 @@ namespace LittleRPG
             // 情况 1：目标是空的 -> 【直接移动】
             if (toData == null || toData.IsEmpty)
             {
-                var newData = SlotData.Empty.CopyFromOther(fromData);
                 if (!model.PlayerItems.ContainsKey(toIndex))
                 {
+                    var newData = SlotData.Empty.CopyFromOther(fromData);
                     model.PlayerItems.Add(toIndex, newData);
                 }
                 else
                 {
-                    model.PlayerItems[toIndex] = newData;
+                    model.PlayerItems[toIndex].CopyFromOther(fromData);
                 }
-
                 model.PlayerItems[fromIndex].SetNone();
+
             }
             // 情况 2：目标有东西，且是同一种物品 -> 【尝试堆叠】
             else if (fromData.ItemID == toData.ItemID)
@@ -80,9 +80,12 @@ namespace LittleRPG
                 SwapData(model, fromIndex, toIndex, fromData, toData);
             }
 
-            // --- 终极奥义：修改完数据后，发送事件通知 UI 刷新！ ---
+            // 发送事件通知 UI 哪两个格子交换了,用于刷新UI
             this.SendEvent(new InventorySlotChangedEvent { SlotIndex = fromIndex });
             this.SendEvent(new InventorySlotChangedEvent { SlotIndex = toIndex });
+
+            // 发送事件通知 UI 哪两个格子交换了,用于UI动画
+            this.SendEvent(new InventorySlotSwappedEvent { FromIndex = fromIndex, ToIndex = toIndex });
         }
 
         /// <summary>

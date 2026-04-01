@@ -33,10 +33,10 @@ namespace LittleRPG
 
         //事件
         public event Action<int> OnSlotClickEvent; // 点击格子时发送事件，参数是格子index
-        public event Action<int, int> OnSlotDropEvent; // 被放下
+        public event Action<int, int> OnSlotDroppedEvent; // 被放下
         public event Action<SlotUIView> OnDragFailedEvent; // 拖到无效区域
-        public event Action<RectTransform> OnSlotHoverEnterEvent; // 悬停进入
-        public event Action<RectTransform> OnSlotHoverExitEvent; // 悬停退出
+        public event Action<SlotUIView> OnSlotHoverEnterEvent; // 悬停进入
+        public event Action<SlotUIView> OnSlotHoverExitEvent; // 悬停退出
 
         public void Init(int index)
         {
@@ -134,16 +134,6 @@ namespace LittleRPG
         public void OnDrag(PointerEventData eventData)
         {
             if (!HasItem) return;
-            SlotUIView enter = eventData.pointerEnter != null
-    ? eventData.pointerEnter.GetComponent<SlotUIView>()
-    : null;
-
-            // 交给controller去处理飞回去的动画，或者丢地上的逻辑
-            if (enter != null && enter != this)
-            {
-                Debug.Log("已经在别人家上面了");
-                return;
-            }
             Dragging.transform.position = eventData.position;
         }
 
@@ -178,7 +168,8 @@ namespace LittleRPG
 
             if (sourceSlot == null) return;
             if (sourceSlot == this) return;
-            OnSlotDropEvent?.Invoke(sourceSlot.SlotIndex, SlotIndex);
+            Debug.Log("被放下了sourceIndex: " + sourceSlot.SlotIndex + " targetIndex: " + SlotIndex);
+            OnSlotDroppedEvent?.Invoke(sourceSlot.SlotIndex, SlotIndex);
             // this.SendCommand(new MoveItemCommand(sourceSlot.SlotIndex, SlotIndex));
         }
 
@@ -212,13 +203,9 @@ namespace LittleRPG
             {
                 Dragging.position = startWorldPos;
             }
-            if (tweenUtil == null)
-            {
-                Debug.Log("tweenUtil 竟然是空的，无法播放飞回动画");
-                return;
-            }
+
             // 3. 此时它的 LocalPosition 是非常大的偏移，让它自己飞回 0,0
-            tweenUtil.UIFlyToTarget(Dragging, transform as RectTransform, 0.25f, () =>
+            tweenUtil.UIFlyToTarget(Dragging, transform.position, 0.25f, () =>
             {
                 if (Dragging == null)
                 {
@@ -229,6 +216,27 @@ namespace LittleRPG
                 Dragging.SetParent(transform as RectTransform);
                 draggingCanvasGroup.blocksRaycasts = true;
             });
+        }
+
+
+        /// <summary>
+        /// 挤到右上角
+        /// </summary>
+        public void PlayPushRightTop(ITweenUtility tweenUtil, float offset = 30f, float duration = 0.2f)
+        {
+            Vector3 target = Dragging.position + new Vector3(offset, offset);
+
+            tweenUtil.UIFlyToTarget(Dragging, target, 0.2f);
+        }
+
+        /// <summary>
+        /// 回到原位
+        /// </summary>
+        public void PlayRecover(ITweenUtility tweenUtil, float offset = 30f, float duration = 0.2f)
+        {
+            Vector3 target = transform.position;
+
+            tweenUtil.UIFlyToTarget(Dragging, target, 0.2f);
         }
 
         /// <summary>
@@ -247,7 +255,7 @@ namespace LittleRPG
             {
                 // 打小报告：老大！有人拿着东西悬停在我头上了！快给我播个被挤开的动画！
                 // 把我自己的 Dragging (图标层) 传给老大去缩放
-                OnSlotHoverEnterEvent?.Invoke(this.Dragging);
+                OnSlotHoverEnterEvent?.Invoke(this);
             }
         }
 
@@ -265,8 +273,13 @@ namespace LittleRPG
             if (draggingObj != null && draggingObj != this)
             {
                 // 打小报告：老大！那个人走了！快把我恢复原状！
-                OnSlotHoverExitEvent?.Invoke(this.Dragging);
+                OnSlotHoverExitEvent?.Invoke(this);
             }
+        }
+
+        public Vector3 GetDraggingWorldPosition()
+        {
+            return Dragging.position;
         }
     }
 }

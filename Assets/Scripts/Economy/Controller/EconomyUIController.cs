@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using QFramework;
 using TMPro;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LittleRPG
 {
@@ -14,8 +15,9 @@ namespace LittleRPG
         public Image GemIcon;
         public TextMeshProUGUI GoldText;
         public TextMeshProUGUI GemText;
+        // private ResLoader mLoader;
 
-        private void Awake()
+        private async void Awake()
         {
             var EconomyUI = GameObject.Find("MyCanvas").transform.Find("EconomyPanel");
             var gold = EconomyUI.Find("GoldBG");
@@ -26,8 +28,8 @@ namespace LittleRPG
             GemText = diamond.Find("CoinNum").GetComponent<TextMeshProUGUI>();
 
             // 假装我们有读取配置的能力，先手动绑定一下
-            GoldIcon.sprite = Resources.Load<Sprite>("Sprites/Economy/Gold");
-            GemIcon.sprite = Resources.Load<Sprite>("Sprites/Economy/Gem");
+            // GoldIcon.sprite = await mLoader.LoadAssetAsync<Sprite>("Assets/Resources_moved/Sprites/Items/Gold.png");
+            // GemIcon.sprite = await mLoader.LoadAssetAsync<Sprite>("Assets/Resources_moved/Sprites/Items/Gem.png");
 
         }
         private void Start()

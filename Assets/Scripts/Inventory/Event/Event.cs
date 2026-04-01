@@ -34,15 +34,20 @@ namespace LittleRPG
         public int SlotIndex; // 哪个格子变了？(-1 代表需要全部刷新)
     }
 
+    /// <summary>
+    /// 通知UI层交换了哪个格子和哪个格子
+    /// </summary>
+    public struct InventorySlotSwappedEvent
+    {
+        public int FromIndex;
+        public int ToIndex;
+    }
+
+    
     // 背包添加事件
     public struct InventoryItemAddEvent
     {
         SlotData inventoryModelData;
-    }
-
-    public struct EndDragEvent
-    {
-        public PointerEventData eventData;
     }
 
     /// <summary>

@@ -2,6 +2,10 @@ using UnityEngine;
 using QFramework;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using System.Threading.Tasks;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+
 namespace LittleRPG
 {
     /// <summary>
@@ -16,15 +20,17 @@ namespace LittleRPG
         public Button CloseInventory; // 关闭背包按键
         public Transform InventoryPanel; // 背包面板
         // 手下所有的傀儡格子
-        private List<SlotUIView> mSlotViews = new List<SlotUIView>();
+        private Dictionary<int, SlotUIView> mSlotViews = new Dictionary<int, SlotUIView>();
         private ITweenUtility tweenUtility;
         // 玩家Model
         private IInventoryModel mModel;
 
+        private ResLoader mLoader; // 资源管家，负责加载物品图标等资源 
+
         //对照表 提供Sprite与Name
         private IItemTableModel itemTableModel;
 
-        private void Start()
+        private async void Start()
         {
             //面板，初始关闭
             var canvas = GameObject.Find("MyCanvas").transform;
@@ -50,35 +56,38 @@ namespace LittleRPG
             {
                 InventoryPanel.gameObject.SetActive(false);
             });
+            mLoader = new ResLoader();
 
-            //加载槽位预制件
-            SlotPrefab = Resources.Load<GameObject>("Prefabs/InventorySlot");
-
+            // 加载槽位预制件
+            // 初始化所有Slot
+            mLoader.LoadAssetAsyncWithCallback<GameObject>("Assets/Resources_moved/Prefabs/InventorySlot.prefab", (slotP) =>
+            {
+                if (slotP == null)
+                {
+                    Debug.LogWarning("槽位预制件没找到");
+                }
+                else
+                {
+                    SlotPrefab = slotP;
+                    InitSlotViews();
+                }
+            });
             mModel = this.GetModel<IInventoryModel>();
             itemTableModel = this.GetModel<IItemTableModel>();
 
-            // 初始化所有Slot
-            InitSlotViews();
-
             // 监听底层数据变化
-            this.RegisterEvent<EndDragEvent>(OnEndDragEvent).UnRegisterWhenGameObjectDestroyed(gameObject);
-
             this.RegisterEvent<InventorySlotChangedEvent>(OnSlotDropEvent).UnRegisterWhenGameObjectDestroyed(gameObject);
+            this.RegisterEvent<InventorySlotSwappedEvent>(OnSlotSwappedEvent).UnRegisterWhenGameObjectDestroyed(gameObject);
 
-            // 3. 首次展示
+            // 首次展示
             RefreshAllViews();
         }
 
         /// <summary>
         /// 初始化槽的数据
         /// </summary>
-        private void InitSlotViews()
+        private async void InitSlotViews()
         {
-            foreach (var kpv in mModel.PlayerItems)
-            {
-                Debug.Log($"{kpv.Key}:{kpv.Value}");
-            }
-
             for (int i = 0; i < mModel.Capacity.Value; i++)
             {
                 var go = Instantiate(SlotPrefab, ContentParent);
@@ -87,15 +96,17 @@ namespace LittleRPG
 
                 view.Init(i); // 设置索引
                 view.OnSlotClickEvent += HandleSlotClick;
-                view.OnSlotDropEvent += HandleSlotDrop;
+                view.OnSlotDroppedEvent += HandleSlotDrop;
                 view.OnDragFailedEvent += HandleDragFailed;
+                view.OnSlotHoverEnterEvent += HandleSlotHoverEnter;
+                view.OnSlotHoverExitEvent += HandleSlotHoverExit;
 
                 //如果model中记录该槽存在数据
                 if (mModel.PlayerItems.ContainsKey(i))
                 {
                     SlotData slotData = mModel.PlayerItems[i];
 
-                    ItemInfo itemInfo = GetItemInfo(slotData.ItemID);
+                    ItemInfo itemInfo = await GetItemInfo(slotData.ItemID);
                     if (itemInfo != null)
                     {
                         view.UpdateIcon(itemInfo.SpriteIcon);
@@ -109,7 +120,7 @@ namespace LittleRPG
                     view.UpdateCount();
                 }
 
-                mSlotViews.Add(view);
+                mSlotViews.Add(i, view);
             }
         }
 
@@ -121,28 +132,25 @@ namespace LittleRPG
         }
 
         /// <summary>
-        /// 处理拖动结束事件
-        /// </summary>
-        /// <param name="e"></param>
-        private void OnEndDragEvent(EndDragEvent e)
-        {
-            e.eventData.pointerEnter.gameObject.TryGetComponent<SlotUIView>(out var targetSlot);
-            e.eventData.pointerDrag.gameObject.TryGetComponent<SlotUIView>(out var sourceSlot);
-            sourceSlot.DraggingToSlot();
-            if (targetSlot == null)
-            {
-                Debug.Log("拖到了无效区域，物品归位");
-                return;
-            }
-        }
-
-        /// <summary>
         /// 处理槽位被拖动事件，发送交换指令
         /// </summary>
         /// <param name="e"></param>
         private void OnSlotDropEvent(InventorySlotChangedEvent e)
         {
             RefreshSlotView(e.SlotIndex);
+        }
+
+        /// <summary>
+        /// 处理格子交换事件
+        /// </summary>
+        /// <param name="e"></param>
+        private void OnSlotSwappedEvent(InventorySlotSwappedEvent e)
+        {
+            Debug.Log($"收到格子交换事件：{e.FromIndex} <-> {e.ToIndex}");
+            mSlotViews.TryGetValue(e.FromIndex, out var fromView);
+            mSlotViews.TryGetValue(e.ToIndex, out var toView);
+            fromView.PlayFlyBackAnimation(tweenUtility, toView.GetDraggingWorldPosition());
+            toView.PlayFlyBackAnimation(tweenUtility, fromView.GetDraggingWorldPosition());
         }
 
 
@@ -152,24 +160,31 @@ namespace LittleRPG
         /// <param name="index"></param>
         private void RefreshSlotView(int slotIndex)
         {
-            var slot = mSlotViews[slotIndex];
+            if (!mSlotViews.ContainsKey(slotIndex)) return;
 
-            mModel.PlayerItems.TryGetValue(slot.SlotIndex, out var slotData);
+            var view = mSlotViews[slotIndex];
 
-            Debug.Log($"刷新了格子 {slotIndex}，数据是 {slotData.ItemID}:{slotData.ItemCount}");
-            if (slotData.IsEmpty)
+            if (mModel.PlayerItems.ContainsKey(slotIndex))
             {
-                slot.UpdateIcon();
-                slot.UpdateCount();
+                SlotData slotData = mModel.PlayerItems[slotIndex];
+                ItemInfo itemInfo = itemTableModel.ItemDic.ContainsKey(slotData.ItemID) ? itemTableModel.ItemDic[slotData.ItemID] : null;
+
+                if (itemInfo != null)
+                {
+                    view.UpdateIcon(itemInfo.SpriteIcon);
+                    view.UpdateCount(slotData.ItemCount);
+                }
+                else
+                {
+                    Debug.LogWarning($"物品ID {slotData.ItemID} 在表格中没有对应的ItemInfo");
+                    view.UpdateIcon();
+                    view.UpdateCount();
+                }
             }
             else
             {
-                var itemInfo = GetItemInfo(slotData.ItemID);
-                if (itemInfo != null)
-                {
-                    slot.UpdateIcon(itemInfo.SpriteIcon);
-                    slot.UpdateCount(slotData.ItemCount);
-                }
+                view.UpdateIcon();
+                view.UpdateCount();
             }
         }
 
@@ -201,18 +216,33 @@ namespace LittleRPG
             slot.PlayFlyBackAnimation(tweenUtility);
         }
 
+        private void HandleSlotHoverEnter(SlotUIView view)
+        {
+            view.PlayPushRightTop(tweenUtility);
+            // 播放被挤开的动画
+        }
+
+        private void HandleSlotHoverExit(SlotUIView view)
+        {
+            // 播放被挤开的动画
+            view.PlayRecover(tweenUtility);
+        }
+
         /// <summary>
         /// 获取物体信息
         /// </summary>
         /// <param name="ItemID"></param>
         /// <returns></returns>
-        private ItemInfo GetItemInfo(int ItemID)
+        private async Task<ItemInfo> GetItemInfo(int ItemID)
         {
-            if (itemTableModel.ItemDic.ContainsKey(ItemID))
+            if (!itemTableModel.ItemDic.ContainsKey(ItemID))
+                return null;
+
+            if (itemTableModel.ItemDic[ItemID].SpriteIcon == null)
             {
-                return itemTableModel.ItemDic[ItemID];
+                itemTableModel.ItemDic[ItemID].SpriteIcon = await mLoader.LoadAssetAsync<Sprite>(itemTableModel.ItemDic[ItemID].SpriteIconPath);
             }
-            return null;
+            return itemTableModel.ItemDic[ItemID];
         }
         public IArchitecture GetArchitecture() => LittleRPGArchitecture.Interface;
     }

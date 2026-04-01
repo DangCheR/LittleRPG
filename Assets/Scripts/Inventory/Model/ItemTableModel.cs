@@ -34,13 +34,13 @@ namespace LittleRPG
         public ItemInfo(int id,
             string Name,
             string describe,
-            Sprite sprite,
+            string spritePath,
             int Max)
         {
             ItemID = id;
             ItemName = Name;
             Describe = describe;
-            SpriteIcon = sprite;
+            SpriteIconPath = spritePath;
             maxStack = Max;
         }
     }
@@ -54,16 +54,12 @@ namespace LittleRPG
         {
             //假装我们有一个读取JOSN或Excel的操作
             //直接存储配置表
-            string AxeSpritePath = "Sprites/Items/axe";
-            string BootsSpritePath = "Sprites/Items/boots";
-            string BowSpritePath = "Sprites/Items/bow";
-            Sprite AxeSprite = Resources.Load<Sprite>(AxeSpritePath);
-            Sprite BootsSprite = Resources.Load<Sprite>(BootsSpritePath);
-            Sprite BowSprite = Resources.Load<Sprite>(BowSpritePath);
-            ItemDic[0] = new ItemInfo(0, "大斧头", "帅的一皮", AxeSprite, 64);
-            ItemDic[1] = new ItemInfo(1, "大鞋子", "快的一皮", BootsSprite, 64);
-            ItemDic[2] = new ItemInfo(2, "大弓箭", "猛的一皮", BowSprite, 64);
-
+            string AxeSpritePath = "Assets/Resources_moved/Sprites/Items/axe.png";
+            string BootsSpritePath = "Assets/Resources_moved/Sprites/Items/boots.png";
+            string BowSpritePath = "Assets/Resources_moved/Sprites/Items/bow.png";
+            ItemDic[0] = new ItemInfo(0, "大斧头", "帅的一皮", AxeSpritePath, 64);
+            ItemDic[1] = new ItemInfo(1, "大鞋子", "快的一皮", BootsSpritePath, 64);
+            ItemDic[2] = new ItemInfo(2, "大弓箭", "猛的一皮", BowSpritePath, 64);
         }
     }
 }

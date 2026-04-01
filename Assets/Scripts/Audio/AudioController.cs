@@ -1,4 +1,3 @@
-using AssetBundleBrowser.AssetBundleModel;
 using QFramework;
 using Unity.VisualScripting;
 using UnityEngine;

@@ -52,7 +52,7 @@ namespace LittleRPG
 
         public void UIFlyToTarget(
             RectTransform from,
-            RectTransform to,
+            Vector3 to,
             float duration = 0.3f,
             Action onComplete = null
         );

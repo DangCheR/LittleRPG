@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Prafabs
+  m_EditorClassIdentifier: 
+  m_GroupName: Prafabs
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 92ec3762b1f561d40a51640fbb23c1b7
+  m_SerializeEntries:
+  - m_GUID: 2b8cfc2cb5e11724abc421d503671191
+    m_Address: Assets/Resources_moved/Prefabs/InventorySlot.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c9c4c3306625d540ae42711a4ed4cf4
+    m_Address: Assets/Resources_moved/Prefabs/GoldBG.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 6a83c24dcd27eee468e7511f4e59d16d, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: afaaff7919239a245af50be3f0a2cfcb, type: 2}
+    - {fileID: 11400000, guid: e21dba32309bbdc41bade0c223dfb85f, type: 2}

@@ -117,7 +117,7 @@ namespace LittleRPG
         /// <param name="onComplete"></param>
         public void UIFlyToTarget(
             RectTransform from,
-            RectTransform to,
+            Vector3 to,
             float duration = 0.3f,
             Action onComplete = null)
         {
@@ -127,13 +127,13 @@ namespace LittleRPG
                 return;
             }
 
-            // ❗先杀掉旧动画
+            // 先杀掉旧动画
             from.DOKill();
 
-            // ✅ 获取目标的世界坐标
-            Vector3 targetWorldPos = to.position;
+            // 获取目标的世界坐标
+            Vector3 targetWorldPos = to;
 
-            // ✅ 直接飞到目标（世界坐标）
+            // 直接飞到目标（世界坐标）
             from.DOMove(targetWorldPos, duration)
                 .SetEase(Ease.OutCubic)
                 .SetUpdate(true)

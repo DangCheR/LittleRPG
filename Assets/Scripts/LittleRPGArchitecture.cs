@@ -84,5 +84,12 @@ public class LittleRPGArchitecture : Architecture<LittleRPGArchitecture>
         /// </summary>
         /// <returns></returns>
         RegisterUtility<ITweenUtility>(new DOTweenUtility());
+
+        /// <summary>
+        /// 注册资源加载工具
+        /// </summary>
+        /// <param name="AddressablesUtility()"></param>
+        /// <typeparam name="IResUtility"></typeparam>
+        RegisterUtility<IResUtility>(new AddressablesUtility());
     }
 }
