@@ -23,6 +23,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - RemoteRes
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a15de37aa38f1d4429604da42a1eaf25
+    m_Address: Assets/Resources_moved/Sprites/Items/apple.png
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - RemoteRes
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: aa4a26c0cbdd97947bcb882587085c3a
     m_Address: Assets/Resources_moved/Sprites/Items/bow.png
     m_ReadOnly: 0
