@@ -79,6 +79,16 @@ public class LittleRPGArchitecture : Architecture<LittleRPGArchitecture>
         this.RegisterModel<IEconomyModel>(new EconomyModel()); // 注册经济系统Model
         this.RegisterSystem<IEconomySystem>(new EconomySystem()); // 注册经济系统System
 
+
+        /// <summary>
+        /// 热更新
+        /// </summary>
+        /// <param name="HotUpdateModel()"></param>
+        /// <typeparam name="IHotUpdateModel"></typeparam>
+        this.RegisterModel<IHotUpdateModel>(new HotUpdateModel()); // 注册热更新系统Model
+        this.RegisterSystem<IHotUpdateSystem>(new HotUpdateSystem()); // 注册热更新系统System
+
+
         /// <summary>
         /// 注册tween工具
         /// </summary>

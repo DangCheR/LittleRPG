@@ -10,20 +10,25 @@ namespace LittleRPG
 {
     public interface IHotUpdateSystem : ISystem
     {
-        // 开始检查更新流程 (传入一个你需要更新的标签，默认是 default)
-        void CheckUpdateAndDownload(string label = "default");
+        // 开始检查更新流程 (传入一个你需要更新的标签，默认是 RemoteRes)
+        void CheckUpdateAndDownload(string label = "RemoteRes");
     }
 
     public class HotUpdateSystem : AbstractSystem, IHotUpdateSystem
     {
-        protected override void OnInit() { }
+        IHotUpdateModel model;
+        protected override void OnInit()
+        {
+            model = this.GetModel<IHotUpdateModel>();
+        }
 
-        public async void CheckUpdateAndDownload(string label = "default")
+        public async void CheckUpdateAndDownload(string label = "RemoteRes")
         {
             try
             {
+                model.tipText.Value = "正在检查更新...";
+                model.progress.Value = 0f;
                 // 1. 初始化 AA 系统
-                this.SendEvent(new HotUpdateProgressEvent { StatusText = "正在初始化资源系统...", Progress = 0f });
                 await Addressables.InitializeAsync().Task;
 
                 // 2. 检查 Catalog (目录) 是否有更新
@@ -33,27 +38,28 @@ namespace LittleRPG
                 if (catalogsToUpdate.Count > 0)
                 {
                     // 3. 有更新！下载最新的 Catalog 目录
-                    this.SendEvent(new HotUpdateProgressEvent { StatusText = "正在拉取最新版本信息...", Progress = 0.2f });
+                    model.tipText.Value = "正在拉取最新版本信息...";
                     await Addressables.UpdateCatalogs(catalogsToUpdate, false).Task;
                 }
 
                 // 4. 检查具体需要下载的资源包大小
-                this.SendEvent(new HotUpdateProgressEvent { StatusText = "正在计算下载大小...", Progress = 0.3f });
-                
+                model.tipText.Value = "正在计算下载大小...";
+
                 // 这里传入 label (比如你可以给所有远端资源打上 "Remote" 标签)
                 long totalDownloadSize = await Addressables.GetDownloadSizeAsync(label).Task;
 
                 if (totalDownloadSize > 0)
                 {
-                    // 发现新资源！【这里你可以发送事件给 UI，让玩家点确认。为了演示，我们直接开始下】
-                    Debug.Log($"[HotUpdate] 发现新资源，大小: {totalDownloadSize / 1048576f:F2} MB");
-                    // this.SendEvent(new HotUpdateFoundEvent { DownloadSizeByte = totalDownloadSize });
+                    model.tipText.Value = "正在计算下载大小...";
+                    model.Max.Value = totalDownloadSize / 1048576f; // 转换成 MB
+                    model.Curr.Value = 0f;
 
+                    Debug.Log($"[HotUpdate] 发现新资源，大小: {totalDownloadSize / 1048576f:F2} MB");
                     await DownloadAssetsAsync(label);
                 }
                 else
                 {
-                    Debug.Log("[HotUpdate] 已经是最新版本，无需下载！");
+                    model.tipText.Value = "已经是最新版本，无需下载！";
                     this.SendEvent(new HotUpdateCompleteEvent());
                 }
             }
@@ -76,20 +82,20 @@ namespace LittleRPG
             while (!downloadHandle.IsDone)
             {
                 float percent = downloadHandle.PercentComplete;
-                this.SendEvent(new HotUpdateProgressEvent 
-                { 
-                    StatusText = $"正在下载资源 ({(percent * 100):F1}%)...", 
+                this.SendEvent(new HotUpdateProgressEvent
+                {
+                    StatusText = $"正在下载资源 ({(percent * 100):F1}%)...",
                     Progress = 0.3f + (percent * 0.7f) // 映射到 30% ~ 100%
                 });
 
                 // 挂起一帧，防止死循环卡死主线程
-                await Task.Yield(); 
+                await Task.Yield();
             }
 
             if (downloadHandle.Status == AsyncOperationStatus.Succeeded)
             {
                 Debug.Log("[HotUpdate] 下载完成！");
-                
+
                 // 【重要】释放下载句柄
                 Addressables.Release(downloadHandle);
 

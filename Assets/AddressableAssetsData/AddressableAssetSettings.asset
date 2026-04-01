@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: 96b9598d043719243a8fef2a821bae9d
   m_currentHash:
     serializedVersion: 2
-    Hash: f1115bc253f3cf033e787f501646baf4
+    Hash: 88126ec3e3e08f1c84b5319129a5d3a4
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 1
   m_BundleLocalCatalog: 0
@@ -90,6 +90,7 @@ MonoBehaviour:
     m_LabelNames:
     - default
     - CoinUI
+    - RomoteRes
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: c3887bfa459449f4eabe69c4737fea90, type: 2}
