@@ -17,13 +17,13 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: 0ec12c7f26e3d334fa76df3772617ac9
   m_SerializeEntries:
-  - m_GUID: 7bfcbceb58e4be4408ae2f3168b14a21
-    m_Address: Assets/Resources_moved/Sprites/Items/bow.png
+  - m_GUID: 884ed111ae2bf1b499c79313c68142a0
+    m_Address: Assets/Resources_moved/Sprites/Items/axe.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 884ed111ae2bf1b499c79313c68142a0
-    m_Address: Assets/Resources_moved/Sprites/Items/axe.png
+  - m_GUID: aa4a26c0cbdd97947bcb882587085c3a
+    m_Address: Assets/Resources_moved/Sprites/Items/bow.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
