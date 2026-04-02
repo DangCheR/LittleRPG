@@ -9,6 +9,7 @@ namespace LittleRPG
     /// 基础背包槽位字段
     /// 后续可能添加耐久
     /// </summary>
+    [Serializable]
     public class SlotData
     {
         public int ItemID;
@@ -35,6 +36,7 @@ namespace LittleRPG
             other.ItemID = fromID;
             other.ItemCount = fromCount;
         }
+        
         public SlotData CopyFromOther(SlotData other)
         {
             ItemID = other.ItemID;

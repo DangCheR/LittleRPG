@@ -20,7 +20,7 @@ namespace LittleRPG
 
     public class AddressablesUtility : IResUtility
     {
-private class AssetState
+        private class AssetState
         {
             public AsyncOperationHandle Handle;
             public int RefCount;
@@ -83,10 +83,10 @@ private class AssetState
             if (mAssetCache.TryGetValue(key, out var state))
             {
                 state.RefCount++;
-                
+
                 // Addressables 的 Completed 事件有个很好的特性：
                 // 如果它已经加载完了，你绑定事件的瞬间，它就会立刻执行回调！
-                state.Handle.Completed += (AsyncOperationHandle handle) => 
+                state.Handle.Completed += (AsyncOperationHandle handle) =>
                 {
                     callback?.Invoke(handle.Result as T);
                 };
@@ -95,11 +95,11 @@ private class AssetState
 
             // 2. 如果缓存里没有，发起真实的加载
             AsyncOperationHandle<T> newHandle = Addressables.LoadAssetAsync<T>(key);
-            
+
             // 【极其关键】：一定要记在总账本上！
             mAssetCache[key] = new AssetState { Handle = newHandle, RefCount = 1 };
 
-            newHandle.Completed += (handle) => 
+            newHandle.Completed += (handle) =>
             {
                 if (handle.Status == AsyncOperationStatus.Succeeded)
                 {

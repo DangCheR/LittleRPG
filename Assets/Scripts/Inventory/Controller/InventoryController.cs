@@ -112,6 +112,11 @@ namespace LittleRPG
                         view.UpdateIcon(itemInfo.SpriteIcon);
                         view.UpdateCount(slotData.ItemCount);
                     }
+                    else
+                    {
+                        view.UpdateIcon();
+                        view.UpdateCount();
+                    }
                 }
                 //如果没有直接初始化为空
                 else
@@ -128,7 +133,10 @@ namespace LittleRPG
 
         private void RefreshAllViews()
         {
-
+            for (int i = 0; i < mModel.Capacity.Value; i++)
+            {
+                RefreshSlotView(i);
+            }
         }
 
         /// <summary>

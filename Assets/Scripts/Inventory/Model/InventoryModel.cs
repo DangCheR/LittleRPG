@@ -25,11 +25,7 @@ namespace LittleRPG
         {
             //假装这里在读取存储
             PlayerItems = new Dictionary<int, SlotData>();
-            PlayerItems[1] = new SlotData(0,20);
-            PlayerItems[2] = new SlotData(0,60);
-            PlayerItems[3] = new SlotData(1,2);
-            PlayerItems[10] = new SlotData(2,3);
-            Capacity = new BindableProperty<int>(21);
+            Capacity = new BindableProperty<int>();
         }
     }
 }

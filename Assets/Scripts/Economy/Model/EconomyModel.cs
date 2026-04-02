@@ -3,6 +3,7 @@ using QFramework;
 
 namespace LittleRPG
 {
+    [System.Serializable]
     public enum IEconomyType
     {
         Gold = 1,
@@ -26,10 +27,6 @@ namespace LittleRPG
         protected override void OnInit()
         {
             Currencies = new Dictionary<IEconomyType, BindableProperty<long>>();
-
-            // 初始化开局默认资产 (比如给 1000 金币，0 宝石)
-            GetCurrency(IEconomyType.Gold).Value = 1000;
-            GetCurrency(IEconomyType.Gem).Value = 99;
         }
 
         public BindableProperty<long> GetCurrency(IEconomyType currencyType)

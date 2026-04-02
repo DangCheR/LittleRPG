@@ -35,17 +35,21 @@ namespace LittleRPG
                 this.SendEvent(new HotUpdateProgressEvent { StatusText = "正在检查更新...", Progress = 0.1f });
                 List<string> catalogsToUpdate = await Addressables.CheckForCatalogUpdates(false).Task;
 
-                if (catalogsToUpdate.Count > 0)
+                if (catalogsToUpdate.Count <= 0)
                 {
-                    // 3. 有更新！下载最新的 Catalog 目录
-                    model.tipText.Value = "正在拉取最新版本信息...";
-                    await Addressables.UpdateCatalogs(catalogsToUpdate, false).Task;
+                    Debug.Log("无更新内容");
+                    this.SendEvent(new HotUpdateCompleteEvent());
+                    return;
                 }
+
+                // 3. 有更新！下载最新的 Catalog 目录
+                model.tipText.Value = "正在拉取最新版本信息...";
+                await Addressables.UpdateCatalogs(catalogsToUpdate, false).Task;
 
                 // 4. 检查具体需要下载的资源包大小
                 model.tipText.Value = "正在计算下载大小...";
 
-                // 这里传入 label (比如你可以给所有远端资源打上 "Remote" 标签)
+                // 这里传入 label
                 long totalDownloadSize = await Addressables.GetDownloadSizeAsync(label).Task;
 
                 if (totalDownloadSize > 0)

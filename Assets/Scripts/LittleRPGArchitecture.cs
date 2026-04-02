@@ -101,5 +101,15 @@ public class LittleRPGArchitecture : Architecture<LittleRPGArchitecture>
         /// <param name="AddressablesUtility()"></param>
         /// <typeparam name="IResUtility"></typeparam>
         RegisterUtility<IResUtility>(new AddressablesUtility());
+
+
+        /// <summary>
+        /// 注册存档工具
+        /// </summary>
+        /// <param name="EasySaveUtility()"></param>
+        /// <typeparam name="ISaveUtility"></typeparam>
+        this.RegisterUtility<ISaveUtility>(new EasySaveUtility());
+        this.RegisterSystem<ISaveSystem>(new SaveSystem());
+        this.RegisterModel<ISaveModel>(new SaveModel());
     }
 }

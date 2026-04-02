@@ -11,7 +11,7 @@ namespace LittleRPG
         {
             DontDestroyOnLoad(gameObject);
         }
-        
+
         void Update()
         {
             if (Input.GetKeyDown(KeyCode.A))
@@ -27,6 +27,11 @@ namespace LittleRPG
             {
                 Debug.Log("按下了B键");
                 this.SendCommand<SpendEconomy>(new SpendEconomy(IEconomyType.Gold, 100));
+            }
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                Debug.Log("按下了S键");
+                this.SendCommand<SaveGameCommand>(new SaveGameCommand(0));
             }
         }
         public IArchitecture GetArchitecture() => LittleRPGArchitecture.Interface;

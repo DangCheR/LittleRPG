@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using QFramework;
 using UnityEngine;
 
@@ -11,12 +12,20 @@ namespace LittleRPG
         void MoveItem(int mFromIndex, int mToIndex);
     }
 
-    public class InventorySystem : AbstractSystem, IInventorySystem
+    public class InventorySystem : AbstractSystem, IInventorySystem, ISaveHandler
     {
+        /// <summary>
+        /// 用于存档路径
+        /// </summary>
+        /// <value></value>
+        public string SaveFileName { get; } = "inventory.es3";
+
         private IInventoryModel mInventoryModel;
 
         protected override void OnInit()
         {
+            this.GetSystem<ISaveSystem>().RegisterSaveHandler(this);
+
             // 初始化背包Model
             mInventoryModel = this.GetModel<IInventoryModel>();
             // 监听事件
@@ -210,11 +219,70 @@ namespace LittleRPG
             }
             return EmptySlotIndex;
         }
+
         public int GetItemCount(int itemID)
         {
             return 0;
-            // return mInventoryModel.PlayerItems.TryGetValue(itemID, out int count) ? count : 0;
         }
 
+        public void OnSave(ISaveUtility saveUtil, string folderPath)
+        {
+            // 自己决定文件名：folderPath + SaveFileName
+            saveUtil.Save("Items", mInventoryModel.PlayerItems, folderPath + SaveFileName);
+            saveUtil.Save("Capacity", mInventoryModel.Capacity.Value, folderPath + SaveFileName);
+        }
+
+        public void OnLoad(ISaveUtility saveUtil, string folderPath)
+        {
+            string filePath = folderPath + SaveFileName;
+            if (saveUtil.HasFile(filePath))
+            {
+                var savedItems = saveUtil.Load("Items", new Dictionary<int, SlotData>(), filePath);
+                int savedCapacity = saveUtil.Load("Capacity", 0, filePath);
+
+                mInventoryModel.Capacity.Value = savedCapacity;
+                mInventoryModel.PlayerItems.Clear();
+
+                foreach (var kvp in savedItems)
+                {
+                    mInventoryModel.PlayerItems[kvp.Key] = kvp.Value;
+                }
+
+                // 自己读完数据，自己发事件通知 UI 刷新！
+                this.SendEvent(new InventorySlotChangedEvent { SlotIndex = -1 });
+            }
+            else
+            {
+                this.NewSave(saveUtil, folderPath); // 没有存档，创建一个新的存档
+            }
+        }
+
+        public void NewSave(ISaveUtility saveUtil, string folderPath)
+        {
+            mInventoryModel.PlayerItems[1] = new SlotData(0, 20);
+            mInventoryModel.PlayerItems[2] = new SlotData(0, 60);
+            mInventoryModel.PlayerItems[3] = new SlotData(1, 2);
+            mInventoryModel.PlayerItems[10] = new SlotData(2, 3);
+            mInventoryModel.Capacity.Value = 21;
+
+            string filePath = folderPath + SaveFileName;
+
+            if (saveUtil.HasFile(filePath))
+            {
+                saveUtil.DeleteFile(filePath);
+            }
+
+            // 3. 执行一次强行存档，把新创建的文件夹盖下去
+            this.OnSave(saveUtil, folderPath);
+        }
+
+        public void OnDelete(ISaveUtility saveUtil, string folderPath)
+        {
+            string filePath = folderPath + SaveFileName;
+            if (saveUtil.HasFile(filePath))
+            {
+                saveUtil.DeleteFile(filePath);
+            }
+        }
     }
 }
