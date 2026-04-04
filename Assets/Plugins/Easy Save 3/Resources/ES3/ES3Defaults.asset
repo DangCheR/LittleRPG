@@ -33,10 +33,14 @@ MonoBehaviour:
     - Assembly-CSharp
     - Assembly-CSharp-firstpass
     - AudioKit
+    - CustomTransform
+    - HelloCube
+    - PPv2URPConverters
     - QFramework
     - QFramework.CoreKit
     - ResKit
     - ResKit.Editor
+    - SpatialTree
     - SupportOldQF
     - UIKit
     - UIKit.Editor
