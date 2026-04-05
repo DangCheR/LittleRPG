@@ -20,7 +20,7 @@ namespace LittleRPG.Combat
             var enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
 
             // 2. 遍历所有玩家
-            foreach (var (combatState, transform) in 
+            foreach (var (combatState, transform) in
                      SystemAPI.Query<RefRW<PlayerCombatState>, RefRO<LocalTransform>>())
             {
                 // 没扣动扳机？跳过！
@@ -38,37 +38,34 @@ namespace LittleRPG.Combat
                 {
                     float3 enemyPos = enemyTransforms[i].Position;
                     float3 dirToEnemy = enemyPos - playerPos;
-                    
-                    // 1. 距离检查：在不在攻击范围内？
-                    if (math.lengthsq(dirToEnemy) <= attackRangeSq)
-                    {
-                        // 2. 角度检查 (Dot Product 点乘)
-                        // normalize: 变成长度为 1 的方向向量
-                        float3 dirNorm = math.normalize(dirToEnemy);
-                        float dotProduct = math.dot(playerForward, dirNorm);
-                        
-                        // 点乘结果: 1=正前方, 0=正侧方, -1=正后方
-                        // 0.5f 大概是前方 120 度夹角 (cos(60度) = 0.5)
-                        if (dotProduct > 0.5f) 
-                        {
-                            // 打中了！！！
-                            Entity hitEnemy = enemyEntities[i];
-                            Debug.Log($"砍中了敌人 {hitEnemy.Index}！");
 
-                            // 【伤害结算】：
-                            // 优雅的做法是：给 enemy 发一个 Damage 事件/Buffer。
-                            // 简单粗暴的做法是：直接在这里改敌人的血量组件。
-                            
-                            // var enemyHealth = SystemAPI.GetComponent<Health>(hitEnemy);
-                            // enemyHealth.Current -= combatState.ValueRO.AttackDamage;
-                            // SystemAPI.SetComponent(hitEnemy, enemyHealth);
-                        }
+                    // 1. 距离检查：在不在攻击范围内？
+                    if (math.lengthsq(dirToEnemy) > attackRangeSq) continue;
+
+                    // 2. 角度检查 (Dot Product 点乘)
+                    // normalize: 变成长度为 1 的方向向量
+                    float3 dirNorm = math.normalize(dirToEnemy);
+                    float dotProduct = math.dot(playerForward, dirNorm);
+
+                    // 点乘结果: 1=正前方, 0=正侧方, -1=正后方
+                    // 0.5f 大概是前方 120 度夹角 (cos(60度) = 0.5)
+                    if (dotProduct < 0.5f) continue;
+                    
+                    // 打中了！！！
+                    Entity hitEnemy = enemyEntities[i];
+                    Debug.Log($"砍中了敌人 {hitEnemy.Index}！");
+                    if (SystemAPI.HasBuffer<DamageBufferElement>(hitEnemy))
+                    {
+                        var damageBuffer = SystemAPI.GetBuffer<DamageBufferElement>(hitEnemy);
+
+                        // 投递 25 点伤害账单！
+                        damageBuffer.Add(new DamageBufferElement { Value = 25f });
                     }
                 }
             }
         }
     }
-    
+
     // 别忘了定义你的 EnemyTag 和 Health
     public struct EnemyTag : IComponentData { }
 }
