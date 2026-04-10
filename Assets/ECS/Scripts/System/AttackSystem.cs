@@ -20,8 +20,8 @@ namespace LittleRPG.Combat
             var enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
 
             // 2. 遍历所有玩家
-            foreach (var (combatState, transform) in
-                     SystemAPI.Query<RefRW<PlayerCombatState>, RefRO<LocalTransform>>())
+            foreach (var (combatState, transform, entity) in
+                     SystemAPI.Query<RefRW<PlayerCombatState>, RefRO<LocalTransform>>().WithEntityAccess())
             {
                 // 没扣动扳机？跳过！
                 if (!combatState.ValueRO.TriggerAttackHit) continue;
@@ -50,7 +50,7 @@ namespace LittleRPG.Combat
                     // 点乘结果: 1=正前方, 0=正侧方, -1=正后方
                     // 0.5f 大概是前方 120 度夹角 (cos(60度) = 0.5)
                     if (dotProduct < 0.5f) continue;
-                    
+
                     // 打中了！！！
                     Entity hitEnemy = enemyEntities[i];
                     Debug.Log($"砍中了敌人 {hitEnemy.Index}！");
@@ -59,13 +59,15 @@ namespace LittleRPG.Combat
                         var damageBuffer = SystemAPI.GetBuffer<DamageBufferElement>(hitEnemy);
 
                         // 投递 25 点伤害账单！
-                        damageBuffer.Add(new DamageBufferElement { Value = 25f });
+                        float dam = combatState.ValueRW.AttackDamage;
+                        damageBuffer.Add(new DamageBufferElement
+                        {
+                            Value = dam,
+                            Attacker = entity
+                        });
                     }
                 }
             }
         }
     }
-
-    // 别忘了定义你的 EnemyTag 和 Health
-    public struct EnemyTag : IComponentData { }
 }

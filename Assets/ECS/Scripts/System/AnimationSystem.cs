@@ -26,7 +26,6 @@ namespace LittleRPG.Combat
             foreach (var (transform, needAnim, entity) in SystemAPI.Query<RefRO<LocalTransform>, NeedsAnimationModel>()
                      .WithEntityAccess())
             {
-
                 // 1. 实例化真正的 3D 模型
                 GameObject modelGO = Object.Instantiate(needAnim.ModelWithAnimator);
 
@@ -53,17 +52,20 @@ namespace LittleRPG.Combat
                     ecb.RemoveComponent<MaterialMeshInfo>(entity);
                 }
             }
-            ecb.Playback(state.EntityManager);
-            ecb.Dispose();
+
 
             // 遍历所有已经挂载了 3D 皮囊，且拥有输入数据 (用来判断动画) 的实体
-            foreach (var (transform, inputData, animGO) in
-                     SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerInputData>, RunningAnimation>())
+            foreach (var (transform, moveConfig, moveComponent, playerState, animGO) in
+                     SystemAPI.Query<RefRO<LocalTransform>, 
+                     RefRO<MoveConfig>, 
+                     RefRO<MoveComponent>, 
+                     RefRO<PlayerState>, 
+                     RunningAnimation>())
             {
 
-                // 1. 物理位置同步 (ECS -> GameObject)
-                // (注意：如果是严格的物理游戏，你可能还需要平滑插值，这里直接覆盖)
+                // 物理位置同步 (ECS -> GameObject)
                 var pos = transform.ValueRO.Position;
+
                 // pos.y = 0; // 官方为了防止乱飞锁了 Y 轴，看你的需求
                 animGO.RunningAnimator.transform.position = pos;
 
@@ -72,7 +74,7 @@ namespace LittleRPG.Combat
 
                 // 2. 动画状态机同步 (ECS Data -> Animator)
                 // 判断是否在移动 (只要输入向量的长度大于一个很小的值，就算在移动)
-                bool isMoving = math.lengthsq(inputData.ValueRO.Move) > 0.01f;
+                bool isMoving = math.lengthsq(moveComponent.ValueRO.MoveDirection) > 0.01f;
                 int m_IsMovingHash = Animator.StringToHash("IsMoving");
                 int m_IsAttackingHash = Animator.StringToHash("Attack");
                 int m_IsRollingHash = Animator.StringToHash("IsRolling");
@@ -80,16 +82,62 @@ namespace LittleRPG.Combat
                 animGO.animator.SetBool(m_IsMovingHash, isMoving);
 
                 // 同步攻击和翻滚 (这种瞬发状态，用 Trigger 或 Bool 都行，取决于你的状态机怎么连的)
-                if (inputData.ValueRO.IsAttacking)
+                if (playerState.ValueRO.IsAttacking)
                 {
                     animGO.animator.SetTrigger(m_IsAttackingHash);
                 }
 
-                // if (inputData.ValueRO.IsRolling)
+                // if (playerState.ValueRO.IsRolling)
                 // {
                 //     animGO.Animator.SetTrigger(m_IsRollingHash);
                 // }
             }
+
+            /// <summary>
+            /// 处理死亡动画
+            /// </summary>
+            /// <param name="(tag"></param>
+            /// <param name="SystemAPI.Query<DeadTag>().WithNone<DeceasedTag>().WithEntityAccess()"></param>
+            /// <typeparam name="DeadTag"></typeparam>
+            /// <returns></returns>
+            foreach (var (animGO, daedTag, entity) in SystemAPI.Query<RunningAnimation, EnabledRefRW<DeadTag>>().WithNone<DeceasedTag>().WithEntityAccess())
+            {
+                // 仅仅打印一下
+                UnityEngine.Debug.Log($"[ECS] 实体 {entity.Index} 触发死亡！正在准备播放动画...");
+
+                int m_IsDeadHash = Animator.StringToHash("IsDead");
+
+                // 触发死亡动画
+                animGO.animator.SetTrigger(m_IsDeadHash);
+
+                UnityEngine.Debug.Log($"设置完了，我没招了");
+
+                //最后一个用DeadTag的负责关闭
+                ecb.SetComponentEnabled<DeadTag>(entity, false);
+                // 这里你可以在动画系统中根据 DeathTag 切换 Animator 状态
+                // 此时不处理删除，逻辑跳过
+            }
+
+            /// <summary>
+            /// 没人关系这个东西有没有死透
+            /// 只有动画系统需要收尸
+            /// </summary>
+            /// <param name="(animGO"></param>
+            /// <param name="SystemAPI.Query<RunningAnimation>().WithAll<DeceasedTag>().WithEntityAccess()"></param>
+            /// <typeparam name="RunningAnimation"></typeparam>
+            /// <returns></returns>
+            foreach (var (animGO, entity) in SystemAPI.Query<RunningAnimation>().WithAll<DeceasedTag>().WithEntityAccess())
+            {
+                if (animGO.RunningAnimator != null)
+                {
+                    Object.Destroy(animGO.RunningAnimator);
+                }
+
+                ecb.DestroyEntity(entity);
+            }
+
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
         }
     }
 }

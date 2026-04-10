@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
 
 /// <summary>
 /// 我再也不装逼了，InputSystem只能用SystemBase
@@ -18,6 +19,7 @@ namespace LittleRPG.Combat
         private InputAction moveAction;
         private InputAction attackAction;
         private InputAction rollAction;
+        private InputAction InteractAction;
 
         // [BurstCompile]
         protected override void OnCreate()
@@ -30,10 +32,28 @@ namespace LittleRPG.Combat
             moveAction = inputActions.Player.Move;
             attackAction = inputActions.Player.Attack;
             rollAction = inputActions.Player.Roll;
+            InteractAction = inputActions.Player.Interact;
 
             moveAction.Enable();
             attackAction.Enable();
             rollAction.Enable();
+            InteractAction.Enable();
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            moveAction.Disable();
+            moveAction.Dispose();
+
+            attackAction.Disable();
+            attackAction.Dispose();
+
+            rollAction.Disable();
+            rollAction.Dispose();
+
+            inputActions.Disable();
+            inputActions.Dispose();
         }
 
         // [BurstCompile]
@@ -41,21 +61,30 @@ namespace LittleRPG.Combat
         {
             ref var inputState = ref SystemAPI.GetSingletonRW<PlayerInputData>().ValueRW;
 
+            // 把输入分割为移动、攻击、翻滚和交互四个部分，分别存到 PlayerInputData 里
+            Entity playerEntity = SystemAPI.GetSingletonEntity<PlayerInputData>();
+
+            var moveComponent = SystemAPI.GetComponentRW<MoveComponent>(playerEntity); // 先拿到当前输入状态，准备修改它
+            var PlayerState = SystemAPI.GetComponentRW<PlayerState>(playerEntity); // 先拿到当前输入状态，准备修改它
+
             // 1. 从 New Input System 获取当前帧的值
             float2 moveInput = moveAction.ReadValue<Vector2>();
 
             // 注意：攻击和翻滚通常需要“按下的那一瞬间”触发，而不是一直按着
             bool isAttacking = attackAction.WasPressedThisFrame();
             bool isRolling = rollAction.WasPressedThisFrame();
+            bool isInteracting = InteractAction.WasPressedThisFrame();
 
             if (math.lengthsq(moveInput) > 1f)
             {
                 moveInput = math.normalize(moveInput);
             }
+            moveComponent.ValueRW.MoveDirection = moveInput; // 设置移动方向
 
-            inputState.Move = moveInput;
-            inputState.IsAttacking = isAttacking;
+            PlayerState.ValueRW.IsAttacking = isAttacking;
+
             inputState.IsRolling = isRolling;
+            PlayerState.ValueRW.IsInteracting = isInteracting;
         }
     }
 #endif

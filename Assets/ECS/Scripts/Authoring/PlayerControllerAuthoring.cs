@@ -22,40 +22,46 @@ namespace LittleRPG.Combat
                 // 给玩家 Entity 添加输入组件，初始值为 0
                 AddComponent(entity, new ControllerConfig
                 {
-                    PlayerMoveSpeed = authoring.PlayerMoveSpeed,
                     PlayerRollSpeed = authoring.PlayerRollSpeed,
                     PlayerAttackSpeed = authoring.PlayerAttackSpeed,
+                });
+
+                AddComponent(entity, new MoveConfig
+                {
+                    MoveSpeed = authoring.PlayerMoveSpeed,
                     RotationSpeed = authoring.RotationSpeed
                 });
+
+                AddComponent<MoveComponent>(entity); // 添加移动组件，初始移动方向为 0
+
                 AddComponent<PlayerInputData>(entity); // 初始化输入
-                AddComponent<PlayerCombatState>(entity); // 初始化攻击
+
+                AddBuffer<DamageBufferElement>(entity); // 可受伤
+                
+                AddBuffer<HealBufferElement>(entity); // 可回血
+
+                // 初始化攻击
+                AddComponent(entity, new PlayerCombatState
+                {
+                    AttackRange = 1,
+                    AttackDamage = 4
+                });
+
+                // 初始化交互组件
+                AddComponent(entity, new Interactor
+                {
+                    Range = 2f // 交互范围
+                });
+
+                // 初始化状态
+                AddComponent(entity, new PlayerState
+                {
+                    IsAttacking = false,
+                    IsMounted = false,
+                    IsInteracting = false,
+                    IsMoving = false
+                });
             }
         }
     }
-
-    public class InputSystemConfig : IComponentData
-    {
-        public InputSystem_Actions inputActions;
-        public InputAction m_MoveAction;
-        public InputAction m_AttackAction;
-        public InputAction m_RollAction;
-    }
-
-    public class StaticInputSystem
-    {
-        public static InputSystem_Actions instance = new InputSystem_Actions();
-        public InputAction m_MoveAction;
-
-    }
-    public struct ControllerConfig : IComponentData
-    {
-        public float PlayerMoveSpeed; // 移动速度
-        public float RotationSpeed; // 转身速度，越大转身越快
-
-
-        //动作的速度对应不同的动画播放速度
-        public float PlayerRollSpeed; // 翻滚速度
-        public float PlayerAttackSpeed; // 攻击速度
-    }
-
 }
