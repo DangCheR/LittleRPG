@@ -17,17 +17,6 @@ namespace LittleRPG.Combat
         public bool IsMoving; // 是否处于战斗状态
     }
 
-    // 在 Baker 里把这个挂给玩家 Entity
-    public struct PlayerCombatState : IComponentData
-    {
-        // 攻击判定的“扳机”
-        public bool TriggerAttackHit;
-
-        // 顺便可以配一下攻击参数
-        public float AttackRange;
-        public float AttackDamage;
-    }
-
     public struct PlayerMountState : IComponentData
     {
         public Entity MountEntity; // 玩家正在骑乘的坐骑实体

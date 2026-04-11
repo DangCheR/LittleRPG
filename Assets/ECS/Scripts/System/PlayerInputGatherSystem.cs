@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
-
+using QFramework;
 /// <summary>
 /// 我再也不装逼了，InputSystem只能用SystemBase
 /// </summary>
@@ -12,7 +12,7 @@ namespace LittleRPG.Combat
 #if !UNITY_DISABLE_MANAGED_COMPONENTS
     // 【关键】：确保在所有游戏逻辑（Simulation）开始之前收集输入！
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    public partial class PlayerInputGatherSystem : SystemBase
+    public partial class PlayerInputGatherSystem : SystemBase, ICanSendEvent
     {
         private InputSystem_Actions inputActions;
 
@@ -66,6 +66,8 @@ namespace LittleRPG.Combat
 
             var moveComponent = SystemAPI.GetComponentRW<MoveComponent>(playerEntity); // 先拿到当前输入状态，准备修改它
             var PlayerState = SystemAPI.GetComponentRW<PlayerState>(playerEntity); // 先拿到当前输入状态，准备修改它
+            var PlayerCombatState = SystemAPI.GetComponentRW<PlayerCombatState>(playerEntity); // 先拿到当前输入状态，准备修改它
+            var RiderState = SystemAPI.GetComponentRW<RiderTag>(playerEntity); // 先拿到当前输入状态，准备修改它
 
             // 1. 从 New Input System 获取当前帧的值
             float2 moveInput = moveAction.ReadValue<Vector2>();
@@ -79,13 +81,43 @@ namespace LittleRPG.Combat
             {
                 moveInput = math.normalize(moveInput);
             }
-            moveComponent.ValueRW.MoveDirection = moveInput; // 设置移动方向
 
-            PlayerState.ValueRW.IsAttacking = isAttacking;
+            // 如果玩家正在骑乘，输入应该控制坐骑而不是玩家自己
+            if (RiderState.ValueRO.MountEntity != Entity.Null)
+            {
+                var MountMoveComponent = SystemAPI.GetComponentRW<MoveComponent>(RiderState.ValueRO.MountEntity); // 先拿到当前输入状态，准备修改它
+                MountMoveComponent.ValueRW.MoveDirection = moveInput; // 设置移动方向
+                moveComponent.ValueRW.MoveDirection = default; // 设置移动方向
+            }
+            else
+            {
+                moveComponent.ValueRW.MoveDirection = moveInput; // 设置移动方向
+            }
+
+            if (isAttacking)
+            {
+                PlayerCombatState.ValueRW.StartAttack = true;
+            }
+            else
+            {
+                PlayerCombatState.ValueRW.StartAttack = false;
+            }
+            // PlayerCombatState.ValueRW.StartAttack = isAttacking;
+            // PlayerState.ValueRW.IsAttacking = isAttacking;
 
             inputState.IsRolling = isRolling;
-            PlayerState.ValueRW.IsInteracting = isInteracting;
+
+            // 交互事件需要发给主世界的交互系统
+            // 所以我们通过 ICanSendEvent 的接口发一个事件告诉玩家交互控制器
+            if (isInteracting)
+            {
+                this.SendEvent<PlayerPressInteractEvent>(new());
+            }
+
+            // PlayerState.ValueRW.IsInteracting = isInteracting;
         }
+        public IArchitecture GetArchitecture() => LittleRPGArchitecture.Interface;
+
     }
 #endif
 }

@@ -61,6 +61,9 @@ namespace LittleRPG.Combat
                     IsInteracting = false,
                     IsMoving = false
                 });
+                
+                // 给玩家打上一个“骑乘标签”，表示玩家可以骑乘
+                AddComponent(entity, new RiderTag());
             }
         }
     }

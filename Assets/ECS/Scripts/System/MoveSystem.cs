@@ -12,17 +12,26 @@ namespace LittleRPG.Combat
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (transform, moveComponent, moveConfig) in
-                     SystemAPI.Query<RefRW<LocalTransform>, RefRW<MoveComponent>, RefRO<MoveConfig>>())
+            foreach (var (transform, moveComponent, moveConfig, entity) in
+                     SystemAPI.Query<RefRW<LocalTransform>,
+                     RefRW<MoveComponent>,
+                     RefRO<MoveConfig>>().WithEntityAccess())
             {
+                if (SystemAPI.HasComponent<MountTag>(entity))
+                {
+                    var riderTag = SystemAPI.GetComponent<MountTag>(entity);
+
+                    // 移动时下马导致马还在走，直接把移动方向清零，坐骑立刻停下来
+                    if (riderTag.RiderEntity == Entity.Null)
+                    {
+                        moveComponent.ValueRW.MoveDirection = float2.zero;
+                        continue;
+                    }
+                }
+                
                 // Move around with WASD (世界坐标系下的移动，不受旋转影响)
                 float3 moveDir = new float3(moveComponent.ValueRO.MoveDirection.x, 0, moveComponent.ValueRO.MoveDirection.y);
                 float3 move = moveDir * moveConfig.ValueRO.MoveSpeed * SystemAPI.Time.DeltaTime;
-
-                // 先不让他跳
-                // controller.ValueRW.VerticalSpeed -= 10.0f * SystemAPI.Time.DeltaTime;
-                // controller.ValueRW.VerticalSpeed = math.max(-10.0f, controller.ValueRO.VerticalSpeed);
-                // move.y = controller.ValueRO.VerticalSpeed * SystemAPI.Time.DeltaTime;
 
                 transform.ValueRW.Position += move;
                 if (transform.ValueRO.Position.y < 0)
@@ -36,25 +45,15 @@ namespace LittleRPG.Combat
                     // 计算目标方向
                     float3 targetDir = new float3(moveComponent.ValueRO.MoveDirection.x, 0, moveComponent.ValueRO.MoveDirection.y);
                     targetDir = math.normalize(targetDir);
-                    
+
                     // 从目标方向创建四元数（向上为 Y 轴）
                     quaternion targetRotation = quaternion.LookRotationSafe(targetDir, math.up());
-                    
-                    quaternion newRotation = math.slerp(transform.ValueRO.Rotation, targetRotation, 
+
+                    quaternion newRotation = math.slerp(transform.ValueRO.Rotation, targetRotation,
                         moveConfig.ValueRO.RotationSpeed * SystemAPI.Time.DeltaTime);
-                    
+
                     transform.ValueRW.Rotation = newRotation;
                 }
-
-                // // Camera look up/down
-                // var turnCam = -input.MouseY * controller.ValueRO.MouseSensitivity * SystemAPI.Time.DeltaTime;
-                // controller.ValueRW.CameraPitch += turnCam;
-
-                // // Jump
-                // if (input.Space)
-                // {
-                //     controller.ValueRW.VerticalSpeed = controller.ValueRO.JumpSpeed;
-                // }
             }
         }
     }

@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Rendering;
 using Unity.Burst;
+using TMPro;
 
 namespace LittleRPG.Combat
 {
@@ -22,6 +23,11 @@ namespace LittleRPG.Combat
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
+            int m_IsMovingHash = Animator.StringToHash("IsMoving");
+            int m_IsAttackingHash = Animator.StringToHash("Attack");
+            int m_IsRollingHash = Animator.StringToHash("IsRolling");
+            int m_IsRidingHash = Animator.StringToHash("IsRiding");
+
             // 查找所有有 NeedsAnimationModel 标签，但还没有 PlayerAnimationGO 的实体
             foreach (var (transform, needAnim, entity) in SystemAPI.Query<RefRO<LocalTransform>, NeedsAnimationModel>()
                      .WithEntityAccess())
@@ -29,9 +35,20 @@ namespace LittleRPG.Combat
                 // 1. 实例化真正的 3D 模型
                 GameObject modelGO = Object.Instantiate(needAnim.ModelWithAnimator);
 
-                var proxy = modelGO.AddComponent<AnimationEventProxy>();
+                var proxy = modelGO.GetComponent<AnimationEventProxy>();
 
-                proxy.OwnerEntity = entity; // 代理处理动画帧事件
+                if (proxy != null)
+                {
+                    proxy.OwnerEntity = entity; // 代理处理动画帧事件
+                }
+
+                var interact = modelGO.GetComponent<BaseInteractive>();
+
+                if (interact != null)
+                {
+                    interact.OwnerEntity = entity; // 让交互组件也记住自己的 Entity
+                }
+
 
                 // 2. 初始化位置 (强行贴合 ECS 实体的出生点)
                 modelGO.transform.position = transform.ValueRO.Position;
@@ -40,7 +57,7 @@ namespace LittleRPG.Combat
                 // 3. 把引用挂给实体，并撕掉“新兵标签”
                 ecb.AddComponent(entity, new RunningAnimation
                 {
-                    RunningAnimator = modelGO,
+                    RunningModel = modelGO,
                     animator = modelGO.GetComponent<Animator>()
                 });
 
@@ -54,44 +71,81 @@ namespace LittleRPG.Combat
             }
 
 
-            // 遍历所有已经挂载了 3D 皮囊，且拥有输入数据 (用来判断动画) 的实体
-            foreach (var (transform, moveConfig, moveComponent, playerState, animGO) in
-                     SystemAPI.Query<RefRO<LocalTransform>, 
-                     RefRO<MoveConfig>, 
-                     RefRO<MoveComponent>, 
-                     RefRO<PlayerState>, 
-                     RunningAnimation>())
+            /// <summary>
+            /// 处理移动动画
+            /// </summary>
+            /// <param name="(transform"></param>
+            /// <param name="SystemAPI.Query<RefRO<LocalTransform>"></param>
+            /// <param name="RefRO<MoveComponent>"></param>
+            /// <param name="RunningAnimation>().WithEntityAccess()"></param>
+            /// <returns></returns>
+            foreach (var (transform, moveComponent, animGO, entity) in
+                     SystemAPI.Query<RefRO<LocalTransform>,
+                     RefRO<MoveComponent>,
+                     RunningAnimation>().WithEntityAccess())
             {
+                if (SystemAPI.HasComponent<RiderTag>(entity))
+                {
+                    var riderTag = SystemAPI.GetComponent<RiderTag>(entity);//.MountEntity = Entity.Null; // 默认没有骑乘坐骑
+                    if (riderTag.MountEntity != Entity.Null)
+                        continue; // 如果正在骑乘，移动动画由坐骑控制，玩家模型保持静止
+                }
 
                 // 物理位置同步 (ECS -> GameObject)
                 var pos = transform.ValueRO.Position;
 
                 // pos.y = 0; // 官方为了防止乱飞锁了 Y 轴，看你的需求
-                animGO.RunningAnimator.transform.position = pos;
+                animGO.RunningModel.transform.position = pos;
 
                 // 旋转同步：与 ECS 实体同步（控制层在 ControllerSystem 中更新旋转）
-                animGO.RunningAnimator.transform.rotation = transform.ValueRO.Rotation;
+                animGO.RunningModel.transform.rotation = transform.ValueRO.Rotation;
 
                 // 2. 动画状态机同步 (ECS Data -> Animator)
                 // 判断是否在移动 (只要输入向量的长度大于一个很小的值，就算在移动)
                 bool isMoving = math.lengthsq(moveComponent.ValueRO.MoveDirection) > 0.01f;
-                int m_IsMovingHash = Animator.StringToHash("IsMoving");
-                int m_IsAttackingHash = Animator.StringToHash("Attack");
-                int m_IsRollingHash = Animator.StringToHash("IsRolling");
 
                 animGO.animator.SetBool(m_IsMovingHash, isMoving);
+            }
 
-                // 同步攻击和翻滚 (这种瞬发状态，用 Trigger 或 Bool 都行，取决于你的状态机怎么连的)
-                if (playerState.ValueRO.IsAttacking)
+            /// <summary>
+            /// 处理攻击动画
+            /// </summary>
+            /// <param name="(combatComponent"></param>
+            /// <param name="SystemAPI.Query<RefRW<PlayerCombatState>"></param>
+            /// <param name="RunningAnimation>().WithEntityAccess()"></param>
+            /// <returns></returns>
+            foreach (var (combatComponent, animGO, entity) in
+                     SystemAPI.Query<RefRW<PlayerCombatState>,
+                     RunningAnimation>()
+                     .WithEntityAccess())
+            {
+                if (combatComponent.ValueRO.StartAttack)
                 {
                     animGO.animator.SetTrigger(m_IsAttackingHash);
+                    Debug.Log($"实体 {entity.Index} 触发攻击动画！");
+                    combatComponent.ValueRW.StartAttack = false; // 重置攻击状态，避免重复触发
                 }
-
-                // if (playerState.ValueRO.IsRolling)
-                // {
-                //     animGO.Animator.SetTrigger(m_IsRollingHash);
-                // }
             }
+
+            /// <summary>
+            /// 处理骑乘动画
+            /// </summary>
+            /// <param name="(transform"></param>
+            /// <param name="SystemAPI.Query<RefRO<LocalTransform>"></param>
+            /// <param name="RefRO<RiderTag>"></param>
+            /// <param name="RunningAnimation>().WithEntityAccess()"></param>
+            /// <returns></returns>
+            foreach (var (riderTag, animGO) in
+                     SystemAPI.Query<RefRO<RiderTag>,
+                     RunningAnimation>()
+                     .WithChangeFilter<RiderTag>())
+            {
+                // 当走的时候上马导致玩家还在move动画
+                // 如果正在骑乘，移动动画由坐骑控制，玩家模型保持Idle
+                if (riderTag.ValueRO.MountEntity == Entity.Null) continue;
+                animGO.animator.SetBool(m_IsMovingHash, false);
+            }
+
 
             /// <summary>
             /// 处理死亡动画
@@ -128,9 +182,9 @@ namespace LittleRPG.Combat
             /// <returns></returns>
             foreach (var (animGO, entity) in SystemAPI.Query<RunningAnimation>().WithAll<DeceasedTag>().WithEntityAccess())
             {
-                if (animGO.RunningAnimator != null)
+                if (animGO.RunningModel != null)
                 {
-                    Object.Destroy(animGO.RunningAnimator);
+                    Object.Destroy(animGO.RunningModel);
                 }
 
                 ecb.DestroyEntity(entity);
@@ -140,4 +194,5 @@ namespace LittleRPG.Combat
             ecb.Dispose();
         }
     }
+
 }

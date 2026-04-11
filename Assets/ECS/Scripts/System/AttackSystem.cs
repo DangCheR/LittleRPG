@@ -21,7 +21,9 @@ namespace LittleRPG.Combat
 
             // 2. 遍历所有玩家
             foreach (var (combatState, transform, entity) in
-                     SystemAPI.Query<RefRW<PlayerCombatState>, RefRO<LocalTransform>>().WithEntityAccess())
+                     SystemAPI.Query<RefRW<PlayerCombatState>,
+                      RefRO<LocalTransform>>()
+                      .WithEntityAccess())
             {
                 // 没扣动扳机？跳过！
                 if (!combatState.ValueRO.TriggerAttackHit) continue;

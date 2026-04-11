@@ -13,7 +13,7 @@ namespace LittleRPG.Combat
 
     public class RunningAnimation : IComponentData
     {
-        public GameObject RunningAnimator; // 运行时资源
+        public GameObject RunningModel; // 运行时资源
         public Animator animator;
     }
 }
