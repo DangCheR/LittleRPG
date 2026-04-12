@@ -20,13 +20,25 @@ namespace LittleRPG.Combat
             var enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
 
             // 2. 遍历所有玩家
-            foreach (var (combatState, transform, entity) in
+            foreach (var (combatState, transform, takeWeapon, equipData, entity) in
                      SystemAPI.Query<RefRW<PlayerCombatState>,
-                      RefRO<LocalTransform>>()
+                      RefRO<LocalTransform>,
+                      RefRO<TakeWeapon>,
+                      RefRW<PlayerEquipData>>()
                       .WithEntityAccess())
             {
+                // 没有武器，跳过攻击逻辑
+                if (equipData.ValueRO.CurrentWeapon == WeaponType.None)
+                {
+                    continue;
+                }
+
                 // 没扣动扳机？跳过！
                 if (!combatState.ValueRO.TriggerAttackHit) continue;
+
+                // 获取当前武器的数据（比如攻击范围和伤害）
+                var weaponData = SystemAPI.GetComponent<WeaponData>(takeWeapon.ValueRO.EquippedWeapon);
+
                 Debug.Log("杀人了！！");
                 // 【核心重置】：立刻把扳机松开！防止下一帧重复扣血！
                 combatState.ValueRW.TriggerAttackHit = false;
@@ -34,7 +46,8 @@ namespace LittleRPG.Combat
                 // --- 扇形索敌逻辑开始 ---
                 float3 playerPos = transform.ValueRO.Position;
                 float3 playerForward = transform.ValueRO.Forward();
-                float attackRangeSq = combatState.ValueRO.AttackRange * combatState.ValueRO.AttackRange;
+
+                float attackRangeSq = weaponData.AttackRange * weaponData.AttackRange;
 
                 for (int i = 0; i < enemyTransforms.Length; i++)
                 {
@@ -61,7 +74,7 @@ namespace LittleRPG.Combat
                         var damageBuffer = SystemAPI.GetBuffer<DamageBufferElement>(hitEnemy);
 
                         // 投递 25 点伤害账单！
-                        float dam = combatState.ValueRW.AttackDamage;
+                        float dam = weaponData.AttackDamage;
                         damageBuffer.Add(new DamageBufferElement
                         {
                             Value = dam,

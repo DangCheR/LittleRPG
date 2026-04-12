@@ -30,7 +30,6 @@ namespace LittleRPG.Combat
                 .WithNone<DeadTag>()
                 .WithEntityAccess())
             {
-
                 if (damageBuffer.IsEmpty)
                 {
                     continue;

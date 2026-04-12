@@ -37,15 +37,11 @@ namespace LittleRPG.Combat
                 AddComponent<PlayerInputData>(entity); // 初始化输入
 
                 AddBuffer<DamageBufferElement>(entity); // 可受伤
-                
+
                 AddBuffer<HealBufferElement>(entity); // 可回血
 
                 // 初始化攻击
-                AddComponent(entity, new PlayerCombatState
-                {
-                    AttackRange = 1,
-                    AttackDamage = 4
-                });
+                AddComponent(entity, new PlayerCombatState());
 
                 // 初始化交互组件
                 AddComponent(entity, new Interactor
@@ -61,9 +57,22 @@ namespace LittleRPG.Combat
                     IsInteracting = false,
                     IsMoving = false
                 });
-                
+
                 // 给玩家打上一个“骑乘标签”，表示玩家可以骑乘
                 AddComponent(entity, new RiderTag());
+
+                // 初始化武器组件
+                AddComponent(entity, new TakeWeapon
+                {
+                    EquippedWeapon = Entity.Null
+                });
+
+                // 可更换武器的组件，记录当前武器和待装备武器
+                AddComponent(entity, new PlayerEquipData
+                {
+                    CurrentWeapon = WeaponType.None,
+                    PendingWeapon = WeaponType.None
+                });
             }
         }
     }

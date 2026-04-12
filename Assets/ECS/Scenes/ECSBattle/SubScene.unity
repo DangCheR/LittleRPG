@@ -232,6 +232,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9fcb8c7a2ea16f43a25020e8fef9d7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MountMoveSpeed: 3
+  MountRotationSpeed: 15
 --- !u!1 &923148022
 GameObject:
   m_ObjectHideFlags: 0
@@ -449,6 +451,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   health: 10
+--- !u!1 &1382248717
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1382248719}
+  - component: {fileID: 1382248718}
+  m_Layer: 0
+  m_Name: WeaponRegister
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1382248718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382248717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0aa951ea94d36b43a38179f42037094, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BoxWeaponGO: {fileID: 7873143643900581281, guid: 0d2e013111256d2478c1790743595b5e, type: 3}
+  SwordWeaponGO: {fileID: 2992738943367869750, guid: bc41cf20f6ef58f49bda5858df3cce91, type: 3}
+--- !u!4 &1382248719
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382248717}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2135778343
 GameObject:
   m_ObjectHideFlags: 0
@@ -571,3 +619,4 @@ SceneRoots:
   - {fileID: 923148026}
   - {fileID: 946994699}
   - {fileID: 20857658}
+  - {fileID: 1382248719}

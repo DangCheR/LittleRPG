@@ -25,6 +25,7 @@ namespace LittleRPG.Combat
 
             int m_IsMovingHash = Animator.StringToHash("IsMoving");
             int m_IsAttackingHash = Animator.StringToHash("Attack");
+            int m_IsChoppingHash = Animator.StringToHash("Chop");
             int m_IsRollingHash = Animator.StringToHash("IsRolling");
             int m_IsRidingHash = Animator.StringToHash("IsRiding");
 
@@ -49,10 +50,22 @@ namespace LittleRPG.Combat
                     interact.OwnerEntity = entity; // 让交互组件也记住自己的 Entity
                 }
 
+                // 如果模型上有 CanTakeWeapon 组件
+                // 说明它可以拿武器，位置同步系统需要知道武器挂在哪个骨骼上
+                var canTakeWeapon = modelGO.GetComponent<CanTakeWeapon>();
+
+                if (canTakeWeapon != null)
+                {
+                    ecb.AddComponent(entity, new WeaponBelongBone
+                    {
+                        WeaponHoldPoint = canTakeWeapon.WeaponHoldPoint,
+                    });
+                }
 
                 // 2. 初始化位置 (强行贴合 ECS 实体的出生点)
                 modelGO.transform.position = transform.ValueRO.Position;
                 modelGO.transform.rotation = transform.ValueRO.Rotation;
+                // Getcomponent<Animator>().SetBool(m_IsMovingHash, false); // 默认不动
 
                 // 3. 把引用挂给实体，并撕掉“新兵标签”
                 ecb.AddComponent(entity, new RunningAnimation
@@ -119,12 +132,31 @@ namespace LittleRPG.Combat
                      RunningAnimation>()
                      .WithEntityAccess())
             {
-                if (combatComponent.ValueRO.StartAttack)
+                if (!combatComponent.ValueRO.StartAttack) continue;
+
+                // 有武器时触发砍击动画
+                if (SystemAPI.HasComponent<PlayerEquipData>(entity))
                 {
-                    animGO.animator.SetTrigger(m_IsAttackingHash);
-                    Debug.Log($"实体 {entity.Index} 触发攻击动画！");
-                    combatComponent.ValueRW.StartAttack = false; // 重置攻击状态，避免重复触发
+                    var Weapon = SystemAPI.GetComponent<PlayerEquipData>(entity);
+                    Debug.Log($"实体 {entity.Index}配备了武器，武器类型为 {Weapon.CurrentWeapon}！");
+
+                    if (Weapon.CurrentWeapon == WeaponType.Sword)
+                    {
+                        animGO.animator.SetTrigger(m_IsChoppingHash);
+                    }
+                    else
+                    {
+                        animGO.animator.SetTrigger(m_IsAttackingHash);
+                    }
                 }
+                else
+                {
+                    // 没有武器时触发默认攻击动画
+                    animGO.animator.SetTrigger(m_IsAttackingHash);
+                }
+
+                Debug.Log($"实体 {entity.Index} 触发攻击动画！");
+                combatComponent.ValueRW.StartAttack = false; // 重置攻击状态，避免重复触发
             }
 
             /// <summary>

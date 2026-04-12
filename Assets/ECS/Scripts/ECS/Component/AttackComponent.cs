@@ -15,8 +15,8 @@ namespace LittleRPG.Combat
         public bool TriggerAttackHit;
 
         // 配一下攻击参数
-        public float AttackRange;
-        public float AttackDamage;
+        // public float AttackRange;
+        // public float AttackDamage;
     }
 
 }
