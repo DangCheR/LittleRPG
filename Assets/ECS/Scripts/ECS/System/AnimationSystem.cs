@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Rendering;
 using Unity.Burst;
 using TMPro;
+using LittleRPG.Physics;
 
 namespace LittleRPG.Combat
 {
@@ -83,6 +84,23 @@ namespace LittleRPG.Combat
                 }
             }
 
+            /// <summary>
+            /// 模型位置同步
+            /// </summary>
+            /// <param name="(transform"></param>
+            /// <param name="SystemAPI.Query<RefRO<LocalTransform>"></param>
+            /// <param name="RefRO<PhyBodyData>"></param>
+            /// <param name="RunningAnimation>().WithEntityAccess()"></param>
+            /// <returns></returns>
+            foreach (var (transform, shape, animGO, entity) in
+                     SystemAPI.Query<RefRO<LocalTransform>,
+                     RefRO<ShapeData>,
+                     RunningAnimation>().WithEntityAccess())
+            {
+                animGO.RunningModel.transform.position = transform.ValueRO.Position;
+                animGO.RunningModel.transform.rotation = transform.ValueRO.Rotation;
+            }
+
 
             /// <summary>
             /// 处理移动动画
@@ -107,11 +125,12 @@ namespace LittleRPG.Combat
                 // 物理位置同步 (ECS -> GameObject)
                 var pos = transform.ValueRO.Position;
 
+                // 模型的位置统一处理
                 // pos.y = 0; // 官方为了防止乱飞锁了 Y 轴，看你的需求
-                animGO.RunningModel.transform.position = pos;
+                // animGO.RunningModel.transform.position = pos;
 
                 // 旋转同步：与 ECS 实体同步（控制层在 ControllerSystem 中更新旋转）
-                animGO.RunningModel.transform.rotation = transform.ValueRO.Rotation;
+                // animGO.RunningModel.transform.rotation = transform.ValueRO.Rotation;
 
                 // 2. 动画状态机同步 (ECS Data -> Animator)
                 // 判断是否在移动 (只要输入向量的长度大于一个很小的值，就算在移动)

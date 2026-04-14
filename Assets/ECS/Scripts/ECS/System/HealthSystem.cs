@@ -40,7 +40,7 @@ namespace LittleRPG.Combat
                 {
                     totalDamage += i.Value;
                 }
-
+                health.ValueRW.lastHP = health.ValueRW.Current;
                 health.ValueRW.Current -= totalDamage;
 
                 damageBuffer.Clear();

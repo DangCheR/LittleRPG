@@ -36,6 +36,16 @@ namespace LittleRPG.Combat
 
                 AddComponent<PlayerInputData>(entity); // 初始化输入
 
+                // 初始化生命值
+                AddComponent(entity, new HealthData
+                {
+                    Max = 20,
+                    Current = 20,
+                    lastHP = 20,
+
+                });
+                
+                 // 可受伤
                 AddBuffer<DamageBufferElement>(entity); // 可受伤
 
                 AddBuffer<HealBufferElement>(entity); // 可回血

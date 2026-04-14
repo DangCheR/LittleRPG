@@ -21,12 +21,14 @@ namespace LittleRPG.Combat
                 float current = health.ValueRO.Current;
                 float max = health.ValueRO.Max;
 
+                if (health.ValueRO.lastHP == health.ValueRO.Current) continue;
+                
                 // 桥梁在此打通！
                 // ECS 系统直接调用 QFramework 的单例架构，发射全局事件！
-                this.SendEvent(new PlayerHealthChangedEvent 
-                { 
-                    CurrentHP = current, 
-                    MaxHP = max 
+                this.SendEvent(new PlayerHealthChangedEvent
+                {
+                    CurrentHP = current,
+                    MaxHP = max
                 });
 
                 UnityEngine.Debug.Log($"[UI Bridge] 捕获到玩家血量变化，已通知 UI：{current}/{max}");
