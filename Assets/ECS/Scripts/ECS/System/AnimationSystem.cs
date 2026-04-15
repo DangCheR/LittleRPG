@@ -97,6 +97,16 @@ namespace LittleRPG.Combat
                      RefRO<ShapeData>,
                      RunningAnimation>().WithEntityAccess())
             {
+                if (SystemAPI.HasComponent<RiderTag>(entity))
+                {
+                    var riderTag = SystemAPI.GetComponent<RiderTag>(entity);
+
+                    // 如果有坐骑，把模型交给主世界代理
+                    if (riderTag.MountEntity != Entity.Null)
+                    {
+                        continue;
+                    }
+                }
                 animGO.RunningModel.transform.position = transform.ValueRO.Position;
                 animGO.RunningModel.transform.rotation = transform.ValueRO.Rotation;
             }
@@ -143,11 +153,11 @@ namespace LittleRPG.Combat
             /// 处理攻击动画
             /// </summary>
             /// <param name="(combatComponent"></param>
-            /// <param name="SystemAPI.Query<RefRW<PlayerCombatState>"></param>
+            /// <param name="SystemAPI.Query<RefRW<AttackSate>"></param>
             /// <param name="RunningAnimation>().WithEntityAccess()"></param>
             /// <returns></returns>
             foreach (var (combatComponent, animGO, entity) in
-                     SystemAPI.Query<RefRW<PlayerCombatState>,
+                     SystemAPI.Query<RefRW<AttackSate>,
                      RunningAnimation>()
                      .WithEntityAccess())
             {

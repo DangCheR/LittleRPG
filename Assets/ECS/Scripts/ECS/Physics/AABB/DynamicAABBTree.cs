@@ -411,16 +411,16 @@ namespace LittleRPG.Physics
         /// <param name="queryAABB">临时碰撞盒</param>
         /// <param name="queryLayer">查询碰撞层</param>
         /// <param name="ColPair">输出碰撞对列表</param>
-        public void QueryAABBCollisions(in AABB queryAABB, CollisionLayer queryLayer, ref NativeList<CollisionPair> ColPair)
+        public void QueryAABBCollisions(in AABB queryAABB, CollisionLayer queryLayer, ref NativeList<Entity> Cols)
         {
             if (rootIndex == -1) return;
-            QueryAABBNode(queryAABB, queryLayer, ref ColPair, rootIndex);
+            QueryAABBNode(queryAABB, queryLayer, ref Cols, rootIndex);
         }
 
         /// <summary>
         /// 递归查询节点与临时AABB的碰撞
         /// </summary>
-        private void QueryAABBNode(in AABB queryAABB, CollisionLayer queryLayer, ref NativeList<CollisionPair> ColPair, int nodeIndex)
+        private void QueryAABBNode(in AABB queryAABB, CollisionLayer queryLayer, ref NativeList<Entity> Cols, int nodeIndex)
         {
             if (nodeIndex == -1) return;
 
@@ -432,17 +432,17 @@ namespace LittleRPG.Physics
             // 是叶子节点，检测碰撞层并记录
             if (node.isLeaf)
             {
-                if (PhysicsUtilities.ShouldCollide(queryLayer, node.layerMask))
+                if (queryLayer == node.layerMask)
                 {
-                    // 临时AABB作为EntityA，树中节点作为EntityB
-                    ColPair.Add(new CollisionPair { EntityA = Entity.Null, EntityB = node.entity });
+                    // 返回节点
+                    Cols.Add(node.entity);
                 }
                 return;
             }
 
             // 非叶子节点，继续递归
-            QueryAABBNode(in queryAABB, queryLayer, ref ColPair, node.LeftChild);
-            QueryAABBNode(in queryAABB, queryLayer, ref ColPair, node.RightChild);
+            QueryAABBNode(in queryAABB, queryLayer, ref Cols, node.LeftChild);
+            QueryAABBNode(in queryAABB, queryLayer, ref Cols, node.RightChild);
         }
 
 

@@ -27,13 +27,13 @@ namespace LittleRPG.Combat
                 return;
             }
 
-            if (!em.HasComponent<PlayerCombatState>(OwnerEntity))
+            if (!em.HasComponent<AttackSate>(OwnerEntity))
             {
-                Debug.Log("PlayerCombatState组件消失");
+                Debug.Log("AttackSate组件消失");
             }
 
             // 拿数据 -> 修改 -> 塞回去
-            var state = em.GetComponentData<PlayerCombatState>(OwnerEntity);
+            var state = em.GetComponentData<AttackSate>(OwnerEntity);
             state.TriggerAttackHit = true;
             em.SetComponentData(OwnerEntity, state);
 
@@ -62,7 +62,7 @@ namespace LittleRPG.Combat
 
             if (!em.HasComponent<DeadTag>(OwnerEntity))
             {
-                Debug.Log("PlayerCombatState组件消失");
+                Debug.Log("AttackSate组件消失");
             }
 
             em.AddComponent<DeceasedTag>(OwnerEntity);

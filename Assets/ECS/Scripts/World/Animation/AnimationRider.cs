@@ -1,6 +1,7 @@
 using UnityEngine;
 using QFramework;
 using Unity.Entities;
+using Unity.Transforms;
 
 namespace LittleRPG.Combat
 {
@@ -12,6 +13,10 @@ namespace LittleRPG.Combat
     public class AnimationRider : MonoBehaviour
     {
         private Animator mAnimator;
+
+        public Entity playerEntity;
+
+        public EntityManager entityManager;
 
         [Header("骑乘状态")]
         public bool IsRiding = false;
@@ -42,10 +47,22 @@ namespace LittleRPG.Combat
 
             IsRiding = true;
 
+
+
+            // 获取位置
+            // if (playerEntity == Entity.Null) GetPlayerEntity();
+
+            // var localTrans = entityManager.GetComponentData<LocalTransform>(playerEntity);
+
+            // 拿数据 -> 修改 -> 塞回去
+
             // 1. 物理上认小猪当干爹 (让承太郎跟着猪走)
             transform.SetParent(MountSeatPoint);
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
+            // localTrans.Position.y = transform.position.y;
+
+            // entityManager.SetComponentData(playerEntity, localTrans);
 
             // 2. 播放通用的骑乘 Idle 动画 (双腿分开的姿势)
             // mAnimator.CrossFade("Ride", 0.2f);
@@ -60,6 +77,11 @@ namespace LittleRPG.Combat
             IsRiding = false;
             IKWeight = 0f;
             transform.SetParent(null); // 脱离小猪
+            // var localTrans = entityManager.GetComponentData<LocalTransform>(playerEntity);
+            
+            // localTrans.Position.y = 0;
+
+            // entityManager.SetComponentData(playerEntity, localTrans);
         }
 
         private void OnAnimatorIK(int layerIndex)
@@ -97,5 +119,25 @@ namespace LittleRPG.Combat
             }
         }
 
+        public void GetPlayerEntity()
+        {
+            // // 获取当前激活的 ECS 世界（这是最安全、最正宗的拿法）
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null) return;
+
+            this.entityManager = world.EntityManager;
+
+            // 创建查询并查找 Singleton
+            var query = entityManager.CreateEntityQuery(typeof(PlayerInputData));
+
+            // 确保查询到玩家实体
+            if (!query.TryGetSingletonEntity<PlayerInputData>(out var playerEntity))
+            {
+                Debug.LogError("没有找到玩家实体！");
+                return;
+            }
+
+            this.playerEntity = playerEntity;
+        }
     }
 }

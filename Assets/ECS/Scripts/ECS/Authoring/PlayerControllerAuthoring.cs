@@ -51,7 +51,7 @@ namespace LittleRPG.Combat
                 AddBuffer<HealBufferElement>(entity); // 可回血
 
                 // 初始化攻击
-                AddComponent(entity, new PlayerCombatState());
+                AddComponent(entity, new AttackSate());
 
                 // 初始化交互组件
                 AddComponent(entity, new Interactor

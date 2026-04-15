@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using LittleRPG.Combat;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -35,15 +36,16 @@ namespace LittleRPG.Physics
 
             // }
 
-            foreach (var (shape, trans) in SystemAPI.Query<RefRW<ShapeData>, RefRW<LocalTransform>>().WithAny<PhyBodyData>())
+            foreach (var (shape, trans,entity) in SystemAPI.Query<RefRW<ShapeData>, 
+                RefRW<LocalTransform>>()
+                .WithAny<PhyBodyData>()
+                .WithEntityAccess())
             {
                 float fixedDeltaTime = 1f / 60f; // Assuming Fixed Timestep = (60Hz physics update)
                 float alpha = ((float)SystemAPI.Time.ElapsedTime % fixedDeltaTime) / fixedDeltaTime;
                 alpha = math.saturate(alpha);
                 // Ensure alpha is clamped between 0-1
                 //Debug.Log(alpha);
-                ////trans.ValueRW.Position = new float3(math.lerp(shape.ValueRO.PreviousPosition, shape.ValueRO.Position, alpha), trans.ValueRO.Position.z);
-                ////trans.ValueRW.Rotation = Quaternion.Euler(0,0, math.lerp(shape.ValueRO.PreviousRotation, shape.ValueRO.Rotation, alpha));
 
                 // 你锁y轴啊，锁我z轴干什么
                 trans.ValueRW.Position = new float3(shape.ValueRO.Position.x, 

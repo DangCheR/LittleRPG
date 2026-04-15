@@ -66,7 +66,7 @@ namespace LittleRPG.Combat
 
             var moveComponent = SystemAPI.GetComponentRW<MoveComponent>(playerEntity); // 先拿到当前输入状态，准备修改它
             var PlayerState = SystemAPI.GetComponentRW<PlayerState>(playerEntity); // 先拿到当前输入状态，准备修改它
-            var PlayerCombatState = SystemAPI.GetComponentRW<PlayerCombatState>(playerEntity); // 先拿到当前输入状态，准备修改它
+            var AttackSate = SystemAPI.GetComponentRW<AttackSate>(playerEntity); // 先拿到当前输入状态，准备修改它
             var RiderState = SystemAPI.GetComponentRW<RiderTag>(playerEntity); // 先拿到当前输入状态，准备修改它
 
             // 1. 从 New Input System 获取当前帧的值
@@ -96,13 +96,13 @@ namespace LittleRPG.Combat
 
             if (isAttacking)
             {
-                PlayerCombatState.ValueRW.StartAttack = true;
+                AttackSate.ValueRW.StartAttack = true;
             }
             else
             {
-                PlayerCombatState.ValueRW.StartAttack = false;
+                AttackSate.ValueRW.StartAttack = false;
             }
-            // PlayerCombatState.ValueRW.StartAttack = isAttacking;
+            // AttackSate.ValueRW.StartAttack = isAttacking;
             // PlayerState.ValueRW.IsAttacking = isAttacking;
 
             inputState.IsRolling = isRolling;

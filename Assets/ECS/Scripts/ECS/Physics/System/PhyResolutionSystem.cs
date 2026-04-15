@@ -61,10 +61,9 @@ namespace LittleRPG.Physics
             NativeList<CollisionPair> CircleBoxColPair = new NativeList<CollisionPair>(100, Allocator.TempJob);
             NativeList<CollisionPair> BoxBoxColPair = new NativeList<CollisionPair>(100, Allocator.TempJob);
 
-            /// JOB BURST THIS ? OPTI
-            /// Inter Dynamic bodies col garthering
+            // 收集碰撞对
             DynamicAABBtree.GatherIntersectingNodes(ref ColPair, DynamicAABBtree.rootIndex);
-            /// Static to Dynamic bodies col garthering
+            // 动态树与静态树的碰撞对
             StaticAABBtree.GatherIntersectingStaticNodes(ref ColPair, ref DynamicAABBtree, StaticAABBtree.rootIndex);
 
             var phyBodiesLookUp = SystemAPI.GetComponentLookup<PhyBodyData>(false);
@@ -106,13 +105,14 @@ namespace LittleRPG.Physics
             /// speculative contact ? : extended pairs for a more stable resolution over the iterations
             /// -> already handled by the AABB fat ?
 
+            // 修正次数
             const short SloverIteration = 6;
+
+            // job循环等待
             JobHandle dep = default;
 
             for (int i = 0; i < SloverIteration; i++)
             {
-
-
                 JobHandle CircleVsCircleJobHandle = new CircleVsCircleCollisionResolutionJob()
                 {
                     CircleShapes = circleShapeLookUp,
@@ -235,11 +235,7 @@ namespace LittleRPG.Physics
                 bodyA.ValueRW.Velocity += -j * invMassA * normal;
                 bodyB.ValueRW.Velocity += j * invMassB * normal;
             }
-
-
-
         }
-
     }
 
 
@@ -702,4 +698,5 @@ namespace LittleRPG.Physics
 
 
     }
+
 }
